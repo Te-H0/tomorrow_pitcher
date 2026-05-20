@@ -192,7 +192,7 @@ Use `MEMORY.md` only for durable, cross-session preferences and decisions. Keep 
 
 ## Git Conventions
 
-Write commit messages in Korean by default. Use another language only when the user explicitly asks for it.
+Use Conventional Commit-style English prefixes with Korean descriptions by default, such as `feat: 경기 상세 화면 추가`, `docs: 아키텍처 문서 추가`, or `chore: 개발 환경 설정`. Use another style only when the user explicitly asks for it.
 
 ## Core References
 

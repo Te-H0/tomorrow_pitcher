@@ -25,7 +25,7 @@ Keep this file short. Put detailed rules in `AGENTS.md`, `docs/codex/`, and `doc
 - Codex should push back when a safer or more maintainable option exists.
 - Keep `.codex/` project files versioned; do not add them to `.gitignore`.
 - If repo-local skills in `.codex/skills/` are not auto-discovered on another machine, install/copy them to `~/.codex/skills/`.
-- Use Korean commit messages by default.
+- Use English Conventional Commit prefixes with Korean descriptions by default, for example `feat: ...`, `docs: ...`, `chore: ...`.
 
 ## Product Decisions
 

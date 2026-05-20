@@ -146,6 +146,8 @@ QA Release Reviewer + Product Planner
 
 Project-local skill sources live in `.codex/skills`. Install them globally only when they prove useful in normal development.
 
+When moving machines, cloning the repo preserves the skill sources. If the local Codex environment does not auto-discover repo-local skills, install or copy `.codex/skills/*` into `~/.codex/skills/` to make them globally available.
+
 Initial skills:
 
 - `tomorrow-pitcher-plan`

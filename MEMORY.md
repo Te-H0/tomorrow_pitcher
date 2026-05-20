@@ -24,6 +24,7 @@ Keep this file short. Put detailed rules in `AGENTS.md`, `docs/codex/`, and `doc
 - Avoid textbook over-normalized database schemas. Split tables only when lifecycle, permissions, cardinality, query shape, audit/history, write complexity, or maintenance value justify it.
 - Codex should push back when a safer or more maintainable option exists.
 - Keep `.codex/` project files versioned; do not add them to `.gitignore`.
+- If repo-local skills in `.codex/skills/` are not auto-discovered on another machine, install/copy them to `~/.codex/skills/`.
 
 ## Product Decisions
 

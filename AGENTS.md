@@ -131,6 +131,7 @@ Before considering a meaningful change done, check:
 - Keep project Codex files versioned in the repository.
 - Do not add `.codex/` or Codex project-operation docs to `.gitignore`.
 - Use local project skills and docs so work can continue consistently across machines and sessions.
+- Project skill sources live in `.codex/skills/`. They are versioned with the repo. If a Codex environment does not auto-discover repo-local skills, install or copy them into `~/.codex/skills/` for global use.
 - Keep current infrastructure and runtime architecture in `docs/architecture/`.
 - Keep `MEMORY.md` short and durable. Use it for stable preferences and decisions, not detailed specs or temporary todos.
 - Keep `CLAUDE.md` as a thin compatibility guide that points Claude Code to the same project rules.

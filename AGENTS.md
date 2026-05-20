@@ -20,6 +20,8 @@ Use this stack unless the user explicitly changes direction:
 - Frontend: Next.js App Router, TypeScript strict, Tailwind CSS.
 - API: Next.js Route Handlers.
 - Database: Supabase Postgres.
+- Local database: Supabase Local with Docker.
+- Production database: Supabase Cloud.
 - Server data access: Supabase service role only from server/API/crawler contexts.
 - Crawler: Python, `requests`, BeautifulSoup4, Playwright only as fallback.
 - Scheduler: GitHub Actions.
@@ -129,5 +131,7 @@ Before considering a meaningful change done, check:
 - Keep project Codex files versioned in the repository.
 - Do not add `.codex/` or Codex project-operation docs to `.gitignore`.
 - Use local project skills and docs so work can continue consistently across machines and sessions.
+- Keep current infrastructure and runtime architecture in `docs/architecture/`.
 - Keep `MEMORY.md` short and durable. Use it for stable preferences and decisions, not detailed specs or temporary todos.
 - Keep `CLAUDE.md` as a thin compatibility guide that points Claude Code to the same project rules.
+- When a meaningful architecture, product, DB, API, environment, or workflow decision is made, update `docs/decisions/` and any relevant spec/plan/memory files without waiting for the user to ask.

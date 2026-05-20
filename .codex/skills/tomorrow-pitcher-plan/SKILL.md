@@ -12,7 +12,8 @@ description: Plan tomorrow_pitcher feature work before implementation. Use when 
 3. Choose the affected areas: `apps/web`, `packages/shared`, `supabase`, `crawler`, `.github/workflows`, or docs.
 4. Design data flow before UI details.
 5. Call out KST, service-role, RLS, and starter-record implications.
-6. Produce a small implementation sequence with verification steps.
+6. Record meaningful accepted decisions in `docs/decisions/` and update durable memory when needed.
+7. Produce a small implementation sequence with verification steps.
 
 ## Default Architecture
 

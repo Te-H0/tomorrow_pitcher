@@ -17,6 +17,7 @@ Keep reports short and action-oriented. Focus on what changed, why it matters, a
 - Verification performed.
 - Blockers or risks.
 - Next recommended tasks.
+- Decisions recorded or still needing decision records.
 
 ## Project Lens
 
@@ -38,4 +39,3 @@ Use:
 - `Verification`
 - `Risks`
 - `Next`
-

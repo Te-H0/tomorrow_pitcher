@@ -65,6 +65,8 @@ Use for:
 6. Record decisions made during implementation.
 7. Update progress.
 
+Codex should perform step 6 proactively. The user should not need to explicitly say "document this" when a meaningful decision has been accepted.
+
 ## When To Ask The User
 
 Ask before proceeding when:

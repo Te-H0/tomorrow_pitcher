@@ -37,6 +37,7 @@ Keep this file short. Put detailed rules in `AGENTS.md`, `docs/codex/`, and `doc
 
 - Monorepo from this repository.
 - Stack: Next.js App Router, TypeScript strict, Tailwind CSS, Supabase Postgres, Next.js Route Handlers, Python crawler, GitHub Actions, Vercel.
+- Development DB uses Supabase Local with Docker; production DB uses Supabase Cloud.
 - Treat all schedule and "today/tomorrow" logic as `Asia/Seoul`.
 - Do not use KBO `/ws/` internal API paths.
 - Keep official, system, fan, and actual starter data separate.

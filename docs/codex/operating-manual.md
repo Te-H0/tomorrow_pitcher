@@ -174,12 +174,15 @@ Skip the formal spec only for tiny fixes, obvious command outputs, typo fixes, o
 
 Use:
 
+- `docs/architecture/` for current system, infrastructure, runtime, and environment architecture.
 - `docs/specs/` for feature specs and product behavior.
 - `docs/dev-plans/` for implementation plans.
 - `docs/decisions/` for architecture/product decisions.
 - `docs/progress/` for running reports.
 
 Decision records should be short and topic-based. Prefer useful history over ceremony. Do not use decisions as daily logs.
+
+Codex should update decision records proactively. If a conversation settles a meaningful architecture, product, DB, API, environment, or workflow decision, record it in `docs/decisions/` and update `MEMORY.md` only when the decision should affect future sessions.
 
 ## Memory Hygiene
 
@@ -193,6 +196,8 @@ Use these local files as the project operating source:
 - `MEMORY.md`
 - `CLAUDE.md`
 - `docs/codex/engineering-standards.md`
+- `docs/architecture/system-overview.md`
+- `docs/architecture/environments.md`
 - `docs/project/kickoff/00-startup-analysis.md`
 - `docs/project/kickoff/03-architecture-decisions.md`
 - `docs/project/kickoff/04-design-brief.md`

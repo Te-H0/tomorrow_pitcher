@@ -136,3 +136,4 @@ Before considering a meaningful change done, check:
 - Keep `MEMORY.md` short and durable. Use it for stable preferences and decisions, not detailed specs or temporary todos.
 - Keep `CLAUDE.md` as a thin compatibility guide that points Claude Code to the same project rules.
 - When a meaningful architecture, product, DB, API, environment, or workflow decision is made, update `docs/decisions/` and any relevant spec/plan/memory files without waiting for the user to ask.
+- Write commit messages in Korean unless the user explicitly asks otherwise.

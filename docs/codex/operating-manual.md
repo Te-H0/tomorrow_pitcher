@@ -190,6 +190,10 @@ Codex should update decision records proactively. If a conversation settles a me
 
 Use `MEMORY.md` only for durable, cross-session preferences and decisions. Keep it under 120 lines. Do not store todos, command logs, daily progress, or implementation scratch notes there. Prune or consolidate it after major milestones.
 
+## Git Conventions
+
+Write commit messages in Korean by default. Use another language only when the user explicitly asks for it.
+
 ## Core References
 
 Use these local files as the project operating source:

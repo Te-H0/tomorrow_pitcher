@@ -38,11 +38,14 @@ Keep this file short. Put detailed rules in `AGENTS.md`, `docs/codex/`, and `doc
 ## Technical Decisions
 
 - Monorepo from this repository.
-- Stack: Next.js App Router, TypeScript strict, Tailwind CSS, Supabase Postgres, Next.js Route Handlers, Python crawler, GitHub Actions, Vercel.
+- Stack: Next.js App Router, TypeScript strict, Tailwind CSS, Supabase Postgres, Next.js Route Handlers, Playwright KBO import scripts, GitHub Actions if scheduling becomes appropriate, Vercel.
 - Development DB uses Supabase Local with Docker; production DB uses Supabase Cloud.
+- MVP data model is pitcher-first and does not use a generic `players` table initially. Use `pitchers`, starter records, pitcher appearances, rotation slots, pitcher availability events, and pitcher season stats before hitter/lineup expansion.
 - Treat all schedule and "today/tomorrow" logic as `Asia/Seoul`.
 - Do not use KBO `/ws/` internal API paths.
+- Get KBO pitcher `playerId` from pitcher record/detail pages, not GameCenter pitcher rows.
 - Keep official, system, fan, and actual starter data separate.
+- Show one expected starter for normal games; allow a second predicted candidate only right after rainout/cancellation/postponement uncertainty.
 
 ## Working Style
 

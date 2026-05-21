@@ -1,0 +1,12 @@
+{
+  "name": "tomorrow-pitcher",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "data:starters:april": "node scripts/extract-kbo-starters.mjs 04",
+    "data:starters:may": "node scripts/extract-kbo-starters.mjs 05"
+  },
+  "devDependencies": {
+    "playwright": "^1.56.1"
+  }
+}

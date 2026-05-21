@@ -55,6 +55,19 @@ Use for:
 - Next tasks.
 - Verification status.
 
+### Backlog
+
+Location: `docs/backlog.md`
+
+Use for:
+
+- Open questions.
+- Pending user decisions.
+- Next tasks that are not yet an implementation plan.
+- Later ideas that should not be forgotten but are not current scope.
+
+When an item is resolved, either remove it, mark it complete, or move the durable outcome into the appropriate spec, dev plan, decision record, or progress report.
+
 ## Workflow
 
 1. Write or update the relevant spec.
@@ -64,6 +77,7 @@ Use for:
 5. Review against `AGENTS.md` and `docs/codex/engineering-standards.md`.
 6. Record decisions made during implementation.
 7. Update progress.
+8. Update `docs/backlog.md` when open questions or next tasks change.
 
 Codex should perform step 6 proactively. The user should not need to explicitly say "document this" when a meaningful decision has been accepted.
 

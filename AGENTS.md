@@ -23,8 +23,8 @@ Use this stack unless the user explicitly changes direction:
 - Local database: Supabase Local with Docker.
 - Production database: Supabase Cloud.
 - Server data access: Supabase service role only from server/API/crawler contexts.
-- Crawler: Python, `requests`, BeautifulSoup4, Playwright only as fallback.
-- Scheduler: GitHub Actions.
+- Data import: Playwright-rendered KBO public pages, isolated from the web app.
+- Scheduler: GitHub Actions only if scheduled production import becomes appropriate.
 - Hosting: Vercel.
 
 Recommended monorepo shape:
@@ -33,7 +33,7 @@ Recommended monorepo shape:
 apps/web
 packages/shared
 supabase
-crawler
+scripts
 docs
 .github/workflows
 ```
@@ -63,7 +63,7 @@ docs
 - Browser writes go through API routes, never direct Supabase writes.
 - Treat all date, "today", "tomorrow", schedule, and cron logic as `Asia/Seoul`.
 - Do not call KBO `/ws/` internal API paths.
-- Parse public HTML pages and keep crawler code isolated from the web app.
+- Parse public KBO pages through isolated Playwright import scripts and keep import code isolated from the web app.
 - Preserve starter record types. Never overwrite `SYSTEM_PREDICTED` with `OFFICIAL_ANNOUNCED` or `ACTUAL`.
 - Do not assume actual starters match official announced starters.
 
@@ -134,6 +134,7 @@ Before considering a meaningful change done, check:
 - Project skill sources live in `.codex/skills/`. They are versioned with the repo. If a Codex environment does not auto-discover repo-local skills, install or copy them into `~/.codex/skills/` for global use.
 - Keep current infrastructure and runtime architecture in `docs/architecture/`.
 - Keep `MEMORY.md` short and durable. Use it for stable preferences and decisions, not detailed specs or temporary todos.
+- Keep unresolved questions, pending decisions, and next tasks in `docs/backlog.md`. When the user asks "what remains" or a new todo appears during discussion, update that file proactively.
 - Keep `CLAUDE.md` as a thin compatibility guide that points Claude Code to the same project rules.
 - When a meaningful architecture, product, DB, API, environment, or workflow decision is made, update `docs/decisions/` and any relevant spec/plan/memory files without waiting for the user to ask.
 - Use Conventional Commit-style English prefixes with Korean descriptions by default, such as `feat: 경기 상세 화면 추가`, `docs: 아키텍처 문서 추가`, or `chore: 개발 환경 설정`.

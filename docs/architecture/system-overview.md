@@ -26,13 +26,11 @@ Next.js Route Handlers
   ↓
 Supabase Cloud Postgres
 
-GitHub Actions cron
+Admin/import workflow
   ↓
-Python crawler
+Playwright-rendered KBO public pages
   ↓
-KBO public HTML pages
-  ↓
-Supabase Cloud Postgres
+Supabase Cloud Postgres / Local Supabase
 ```
 
 ## Monorepo Shape
@@ -49,8 +47,8 @@ packages/shared
 supabase
   migrations, seed data, generated database types
 
-crawler
-  Python KBO parsers, mappers, sync scripts, parser fixtures/tests
+scripts
+  KBO Playwright import scripts, mappers, parser fixtures/tests
 
 docs
   specs, dev plans, architecture, decisions, progress
@@ -64,10 +62,12 @@ docs
 Supabase is the source of truth for:
 
 - Teams.
-- Players.
+- Pitchers.
 - Games.
 - Pitcher appearances.
 - Starter records.
+- Rotation slots.
+- Pitcher availability events.
 - Fan votes.
 - Pitcher season stats.
 
@@ -99,21 +99,34 @@ Next.js server/API:
 - Handles vote writes.
 - Owns server-side validation.
 
-Crawler:
+Import scripts:
 
-- Parses KBO public HTML.
+- Parse KBO public pages rendered through Playwright.
 - Normalizes and validates data.
 - Upserts into Supabase using service-role credentials.
 - Does not call KBO `/ws/` internal APIs.
 
-## Crawler Data Flow
+## Data Sources
+
+The initial canonical data source is KBO public pages. Imports should keep internal IDs separate from external IDs.
+
+| Data | KBO page | Initial use |
+| --- | --- | --- |
+| Game schedule | `https://www.koreabaseball.com/Schedule/Schedule.aspx#` | Pre-register published games into `games` before prediction |
+| GameCenter starters and pitcher records | `https://www.koreabaseball.com/Schedule/GameCenter/Main.aspx` | Import official announced starters, actual starters, and pitcher appearances |
+| Pitcher records and player IDs | `https://www.koreabaseball.com/Record/Player/PitcherBasic/Basic1.aspx` | Import pitcher masters, KBO `playerId`, and season stats |
+| Pitcher detail | `https://www.koreabaseball.com/Record/Player/PitcherDetail/Basic.aspx?playerId=...` | Import pitcher profile, detail stats, recent game context, and registration-day context |
+| Player movement | `https://www.koreabaseball.com/Player/Trade.aspx` | Candidate source for injury/registration/transfer context; exact mapping is deferred |
+
+## Import Data Flow
 
 ```text
-Fetch public HTML
-→ Parse
+Open KBO public page with Playwright
+→ Read rendered DOM
+→ Parse target fields
 → Normalize
 → Validate
-→ Map teams/players
+→ Map teams/pitchers
 → Upsert
 → Log unresolved values
 ```
@@ -125,7 +138,7 @@ Parser and mapping tests should be fixture-based where possible.
 - All schedule and "today/tomorrow" logic is KST.
 - DB schema decisions require user confirmation.
 - Do not over-normalize tables without product or operational value.
+- MVP data modeling is pitcher-first; hitter/lineup expansion is deferred.
 - Keep domain constants centralized.
 - Keep business rules outside UI components.
 - Keep raw DB rows, domain objects, and screen DTOs separate when boundaries matter.
-

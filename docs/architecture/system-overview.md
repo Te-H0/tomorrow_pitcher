@@ -20,9 +20,9 @@ Home today's/tomorrow's games
 ```text
 User
   ↓
-Vercel / Next.js App Router
+Toss App / Apps in Toss WebView mini app
   ↓
-Next.js Route Handlers
+Server/API boundary where needed
   ↓
 Supabase Cloud Postgres
 
@@ -38,8 +38,11 @@ Supabase Cloud Postgres / Local Supabase
 Planned structure:
 
 ```text
-apps/web
-  Next.js app, route handlers, UI components
+apps/mini-app
+  Apps in Toss WebView mini app, TDS Mobile UI, platform configuration
+
+apps/web or apps/admin
+  Deferred unless needed for admin/backoffice or server/API routes
 
 packages/shared
   shared domain constants, KST date helpers, pure rules, shared types
@@ -87,17 +90,19 @@ ACTUAL > OFFICIAL_ANNOUNCED > SYSTEM_PREDICTED
 
 ## Server Boundaries
 
-Browser:
+Mini app WebView:
 
-- Reads public data through pages/API.
-- Creates anonymous vote key in localStorage.
+- Reads public data through approved API/server boundaries.
+- Stores only safe client preferences or anonymous local keys if used.
 - Never receives service-role keys.
 
-Next.js server/API:
+Server/API layer:
 
 - Reads and aggregates Supabase data.
 - Handles vote writes.
 - Owns server-side validation.
+- Owns any service-role Supabase access.
+- Owns Apps in Toss server-to-server calls that require mTLS certificates.
 
 Import scripts:
 
@@ -137,6 +142,8 @@ Parser and mapping tests should be fixture-based where possible.
 
 - All schedule and "today/tomorrow" logic is KST.
 - DB schema decisions require user confirmation.
+- Apps in Toss/TDS platform constraints override standalone web UI assumptions.
+- Do not expose service-role credentials or Apps in Toss server certificates to the WebView client.
 - Do not over-normalize tables without product or operational value.
 - MVP data modeling is pitcher-first; hitter/lineup expansion is deferred.
 - Keep domain constants centralized.

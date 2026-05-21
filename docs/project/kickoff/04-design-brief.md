@@ -12,16 +12,25 @@ date/time -> stadium -> matchup -> starter status -> rotation/fan/official info
 
 ## First Screen
 
-Use home as the fast lookup screen:
+Use home as today's game report. It should summarize the current KBO day with the user's selected team first, then link into game detail:
 
 ```text
-App bar: 선발일보 / current KST date
-Date segmented control: 오늘 / 내일 / 이번 주
-Game cards
-Bottom tabs: 홈 / 달력 / 팀
+App bar: 선발일보 / current KST date / selected team
+Today report
+My team game card
+Starter status summary
+Poll preview
+Bottom tabs: 홈 / 일정 / 커뮤니티 / 순위
 ```
 
-Keep the tagline small. The game list is the hero.
+Keep the tagline small. The report content is the hero.
+
+Primary MVP tabs:
+
+- `홈`: today's game report.
+- `일정`: monthly calendar schedule.
+- `커뮤니티`: admin-curated polls.
+- `순위`: team standings first.
 
 ## Game Card
 
@@ -80,20 +89,44 @@ Avoid free-text "other" in the first MVP because it hurts data quality.
 Suggested Tailwind tokens:
 
 ```text
-background: #F8FAFC
+background: #F7F9FC
 surface: #FFFFFF
-surface muted: #F1F5F9
-text: #0F172A
-muted text: #64748B
-border: #E2E8F0
-primary: #0F766E
-primary soft: #CCFBF1
+surface muted: #F1F4F8
+text: #111827
+muted text: #8A94A6
+subtle text: #B7BEC9
+border: #E6EAF0
+primary: #1E73F8
+primary pressed: #155BD4
+primary soft: #EAF2FF
 warning: #D97706
 success: #16A34A
 danger: #DC2626
 ```
 
-Use team colors only in small badges, thin accents, or chips.
+Use team colors only in small badges, thin accents, or chips. Do not let team colors become the full-page theme.
+
+### Bottom Navigation
+
+Use the attached reference direction for the mobile footer:
+
+```text
+White fixed bottom bar
+4 tabs: 홈 / 일정 / 커뮤니티 / 순위
+Active tab: blue rounded rectangle, white icon, white label
+Inactive tabs: gray icon, gray label
+Icon above label
+Large tap targets
+```
+
+Recommended icon mapping:
+
+- `홈`: home icon.
+- `일정`: calendar icon.
+- `커뮤니티`: vote, message-circle, or chart-pie icon.
+- `순위`: bar-chart or trophy icon.
+
+The active tab block should feel prominent but not pill-like navigation clutter. Keep the footer height stable across all screens.
 
 Core components:
 
@@ -106,4 +139,3 @@ Core components:
 - `StatPill`
 - `BottomTabBar`
 - `DateSegmentControl`
-

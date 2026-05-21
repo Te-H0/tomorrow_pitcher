@@ -5,7 +5,8 @@
 Local development uses:
 
 ```text
-Next.js local dev server
+Apps in Toss WebView local dev server
+Apps in Toss sandbox app
 Python crawler scripts
 Supabase Local with Docker
 Saved crawler HTML fixtures
@@ -14,7 +15,8 @@ Saved crawler HTML fixtures
 Purpose:
 
 - Develop schema and migrations safely.
-- Run the web app locally.
+- Run the mini app locally in browser for fast checks.
+- Test the mini app in the Apps in Toss sandbox app for platform-real WebView behavior.
 - Run crawler/parser tests locally.
 - Test DB upserts without touching production.
 
@@ -25,14 +27,15 @@ Parser tests should not require Docker when they only read saved fixtures.
 Production uses:
 
 ```text
-Vercel
+Apps in Toss mini app bundle
 Supabase Cloud
 GitHub Actions scheduled crawler jobs
+Server/API hosting where server-only access or Apps in Toss mTLS is required
 ```
 
 Purpose:
 
-- Serve the mobile web app.
+- Serve the mini app inside Toss.
 - Store production data.
 - Run scheduled KBO sync jobs.
 
@@ -58,11 +61,13 @@ SUPABASE_SERVICE_ROLE_KEY
 Production:
 
 ```text
-Vercel:
-- NEXT_PUBLIC_SUPABASE_URL
-- NEXT_PUBLIC_SUPABASE_ANON_KEY
+Apps in Toss mini app:
+- public client-safe config only
+
+Server/API hosting:
 - SUPABASE_URL
 - SUPABASE_SERVICE_ROLE_KEY
+- Apps in Toss server certificates/keys when required
 
 GitHub Actions:
 - SUPABASE_URL
@@ -77,9 +82,10 @@ Planned flow:
 
 ```text
 Local Supabase migration
-→ Local app/crawler verification
+→ Local mini app/browser verification
+→ Apps in Toss sandbox verification
 → Apply migration to Supabase Cloud
-→ Deploy web to Vercel
+→ Build Apps in Toss mini app bundle
+→ Upload/test through Toss app
 → Run/enable GitHub Actions crawler schedules
 ```
-

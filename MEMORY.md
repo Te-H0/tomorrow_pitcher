@@ -30,6 +30,7 @@ Keep this file short. Put detailed rules in `AGENTS.md`, `docs/codex/`, and `doc
 ## Product Decisions
 
 - Product framing: KBO 경기 전 선발 정보 정리 서비스.
+- Working Korean brand/display name for the Apps in Toss MVP is `야구일보`.
 - Avoid betting, odds, profit, guaranteed prediction, or gambling-adjacent language.
 - Game detail is the core product surface.
 - Home should quickly show today/tomorrow starter status.

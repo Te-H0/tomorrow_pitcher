@@ -15,6 +15,7 @@ This file tracks open questions, pending decisions, and next tasks that should n
 
 - [x] Decide MVP first screen scope: home as today's game report, with game detail as the core product surface.
 - [x] Decide launch platform: pivot MVP frontend to Apps in Toss WebView mini app.
+- [x] Decide MVP player photo policy: exclude real player photos until rights are secured.
 - [ ] Decide initial admin workflow: Supabase Studio/import scripts first, or a minimal admin page.
 - [ ] Decide first import range: 2026 full published schedule, or 2026 April-May first.
 - [ ] Decide prediction v1 scope: simple rotation only, or include cancellation variable candidate from the first version.
@@ -49,6 +50,7 @@ This file tracks open questions, pending decisions, and next tasks that should n
 
 ## Later
 
+- [ ] Revisit player photos only after official permission or a paid license is available; model provider, source, scope, attribution, expiration, and removal status.
 - [ ] Revisit hitter tables only when hitter/lineup features become real product scope.
 - [ ] Revisit a generic `players` table only when cross-player features justify it.
 - [ ] Revisit scheduled production import only after operational/legal/source policy is comfortable.

@@ -31,6 +31,7 @@ Keep this file short. Put detailed rules in `AGENTS.md`, `docs/codex/`, and `doc
 
 - Product framing: KBO 경기 전 선발 정보 정리 서비스.
 - Working Korean brand/display name for the Apps in Toss MVP is `야구일보`.
+- Exclude real player photos from MVP; use names, team accents, jersey numbers, initials, or neutral silhouettes until rights are secured.
 - Avoid betting, odds, profit, guaranteed prediction, or gambling-adjacent language.
 - Game detail is the core product surface.
 - Home should quickly show today/tomorrow starter status.
@@ -39,7 +40,7 @@ Keep this file short. Put detailed rules in `AGENTS.md`, `docs/codex/`, and `doc
 ## Technical Decisions
 
 - Monorepo from this repository.
-- Stack: Next.js App Router, TypeScript strict, Tailwind CSS, Supabase Postgres, Next.js Route Handlers, Playwright KBO import scripts, GitHub Actions if scheduling becomes appropriate, Vercel.
+- Stack pivot: Apps in Toss WebView mini app with TDS Mobile, Supabase Postgres, server-only API where needed, Playwright KBO import scripts, and GitHub Actions if scheduling becomes appropriate.
 - Development DB uses Supabase Local with Docker; production DB uses Supabase Cloud.
 - MVP data model is pitcher-first and does not use a generic `players` table initially. Use `pitchers`, starter records, pitcher appearances, rotation slots, pitcher availability events, and pitcher season stats before hitter/lineup expansion.
 - Treat all schedule and "today/tomorrow" logic as `Asia/Seoul`.

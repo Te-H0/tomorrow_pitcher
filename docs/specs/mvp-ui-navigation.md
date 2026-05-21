@@ -94,6 +94,19 @@ It should show:
 - Recent rotation timeline.
 - Data source and KST last-updated time.
 
+## Player Image Policy
+
+Do not show real player photos in the MVP.
+
+Use safe alternatives:
+
+- Player name and team.
+- Jersey number when available from allowed data.
+- Team badge or small team-color accent.
+- Initials, neutral silhouette, or pitcher-role icon.
+
+Do not crawl, store, hotlink, or AI-generate real-player-like images without an approved license or explicit rights review.
+
 ## Bottom Navigation Design
 
 Use a fixed mobile footer with four icon-first tabs:
@@ -127,5 +140,6 @@ Suggested icon mapping:
 - Schedule uses a monthly calendar as the main browsing surface.
 - Community MVP is polls only.
 - Standings start with team rankings.
+- MVP does not include real player photos.
 - All starter states preserve the separation between official, system-predicted, fan-expected, and actual starters.
 - UI copy avoids betting-like language.

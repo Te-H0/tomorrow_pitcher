@@ -18,7 +18,9 @@ This file tracks open questions, pending decisions, and next tasks that should n
 - [x] Decide MVP player photo policy: exclude real player photos until rights are secured.
 - [ ] Decide initial admin workflow: Supabase Studio/import scripts first, or a minimal admin page.
 - [ ] Decide first import range: 2026 full published schedule, or 2026 April-May first.
-- [ ] Decide prediction v1 scope: simple rotation only, or include cancellation variable candidate from the first version.
+- [x] Decide prediction v1 scope: simple admin-managed rotation pointer only; defer rank-2 variable candidates.
+- [x] Decide manual availability review semantics: KBO movement/news are admin context only in MVP v1, not automatic prediction mutation.
+- [x] Decide rotation admin semantics: admins manage rotation order and current pointer after rainouts, skips, temporary starters, and manual corrections.
 - [ ] Decide whether `starting_pitcher_records.confidence` is excluded from MVP schema or kept as an internal-only nullable field.
 - [ ] Decide whether Toss Login is MVP day-one or post-business-registration follow-up.
 - [ ] Decide immutable Apps in Toss `appName`, logo, and primary brand color for `야구일보`.
@@ -43,9 +45,12 @@ This file tracks open questions, pending decisions, and next tasks that should n
 - [ ] Add teams seed data with canonical service codes and KBO codes.
 - [ ] Build KBO pitcher master/playerId import from pitcher record/detail pages.
 - [ ] Build KBO schedule import from `Schedule.aspx`.
+- [ ] Build KBO player movement import for registration, de-registration, injury list, and rehabilitation list as admin context.
 - [ ] Build GameCenter starter and pitcher appearance import.
 - [ ] Generate sample local seed data from April-May 2026 KBO records.
-- [ ] Implement first rotation prediction service.
+- [ ] Add `team_rotation_states` to final schema and seed one next-slot pointer per KBO team.
+- [ ] Implement first rotation prediction service from `team_rotation_states.next_slot_no`.
+- [ ] Build minimal admin workflow for team rotation order, current pointer, and manual prediction correction before advanced news/AI signals.
 - [ ] Build minimal home and game detail views.
 
 ## Later

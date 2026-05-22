@@ -47,7 +47,8 @@ Keep this file short. Put detailed rules in `AGENTS.md`, `docs/codex/`, and `doc
 - Do not use KBO `/ws/` internal API paths.
 - Get KBO pitcher `playerId` from pitcher record/detail pages, not GameCenter pitcher rows.
 - Keep official, system, fan, and actual starter data separate.
-- Show one expected starter for normal games; allow a second predicted candidate only right after rainout/cancellation/postponement uncertainty.
+- MVP v1 system predictions come from an admin-managed team rotation pointer. Show one `SYSTEM_PREDICTED` starter; defer rank-2 variable candidates and AI/news automatic prediction changes.
+- AI/news can later summarize starter-related news for operator review, but should not mutate prediction records automatically in MVP v1.
 
 ## Working Style
 

@@ -75,9 +75,9 @@ Rules:
 - Official announced starters do not overwrite system predictions.
 - Actual starters do not get assumed from official announced starters.
 - Cancelled games can have official announced starters but no actual starters.
-- Normal games should have one `SYSTEM_PREDICTED` starter per team.
-- Immediately after rainout/cancellation/postponement, `SYSTEM_PREDICTED` may store up to two ranked candidates per team.
-- The second predicted candidate is only for cancellation uncertainty, not a general "top 2" feature.
+- MVP v1 should store one `SYSTEM_PREDICTED` starter per team from the managed rotation pointer.
+- A second `SYSTEM_PREDICTED` candidate is deferred for MVP v1. It may be revisited later for rainout uncertainty or AI/operator variable candidates.
+- AI/news signals must not automatically replace the primary system prediction in MVP v1.
 - `OFFICIAL_ANNOUNCED` and `ACTUAL` remain single-pitcher records per game/team.
 
 Suggested prediction fields:
@@ -93,13 +93,13 @@ Rank policy:
 
 ```text
 rank = 1
-primary expected starter
+primary expected starter from managed rotation
 
 rank = 2
-cancellation-uncertainty candidate only
+deferred for MVP v1; future variable candidate only when product policy allows it
 ```
 
-Example:
+Future non-MVP example:
 
 ```text
 Rainout announced starter: A
@@ -125,9 +125,9 @@ Team rotation structure.
 
 Purpose:
 
-- Represent 1st~5th/6th starter slots.
-- Handle cases where a slot pitcher is injured, removed, or replaced.
-- Let admin/import workflows correct the current rotation without rewriting appearance history.
+- Represent each team's managed starter order, usually 1st~5th/6th slots.
+- Let admins correct the rotation order without rewriting appearance history.
+- Keep the long-term rotation structure separate from the current "next starter" pointer.
 
 Suggested fields:
 
@@ -173,14 +173,63 @@ Example:
 → B inserted as active slot_no=4 with reason=INJURY_REPLACEMENT
 ```
 
+For MVP v1, avoid automatic slot replacement from news or uncertain injury reports. Operators can update `rotation_slots` manually when they decide the team's rotation structure really changed.
+
+### `team_rotation_states`
+
+Current rotation pointer per team.
+
+Purpose:
+
+- Store which active `rotation_slots.slot_no` should be used for the team's next system prediction.
+- Let an admin move, hold, or directly set the next starter pointer after rainouts, skips, temporary starters, or manual corrections.
+- Prevent the prediction service from inferring every KBO exception from code.
+
+Expected row count is one row per KBO team. A small state table is intentional because this is shared operational state used by admin workflows and prediction jobs.
+
+Suggested fields:
+
+```text
+team_id
+next_slot_no
+last_advanced_game_id
+last_actual_starter_id
+manual_override_until
+updated_by
+updated_at
+note
+```
+
+MVP minimum fields:
+
+```text
+team_id
+next_slot_no
+updated_by
+updated_at
+note
+```
+
+Admin actions:
+
+```text
+Set next slot directly
+Advance to next slot
+Hold pointer after rainout/cancellation
+Move pointer after actual starter
+Mark one-game manual prediction without changing the long-term slot order
+```
+
 ### `pitcher_availability_events`
 
 Pitcher availability and rotation-affecting events.
 
 Purpose:
 
-- Track why a pitcher should be excluded, downgraded, or treated as temporary.
+- Track official or manually recorded availability facts such as KBO registration, de-registration, injury list, rehabilitation list, or operator notes.
+- Serve as admin context for manual rotation/pointer decisions in MVP v1.
 - Avoid over-splitting into separate injury/farm/rotation event tables.
+- Do not automatically change `rotation_slots`, `team_rotation_states`, or `starting_pitcher_records` in MVP v1.
 
 Suggested event types:
 
@@ -271,30 +320,32 @@ Anonymous fan expected starter votes.
 
 ## Why This Is Not Over-Normalized
 
-`rotation_slots` and `pitcher_availability_events` are separate because they answer different questions:
+`rotation_slots`, `team_rotation_states`, and `pitcher_availability_events` are separate because they answer different questions:
 
 - `rotation_slots`: who currently owns each team rotation slot?
-- `pitcher_availability_events`: why is a pitcher unavailable, downgraded, temporary, or changed?
+- `team_rotation_states`: which slot is next for this team's managed rotation?
+- `pitcher_availability_events`: what official/manual context might affect operator decisions?
 
 They are not split into many event subtype tables because MVP does not need that level of lifecycle separation.
 
 ## Prediction Flow
 
 ```text
-1. Load recent actual starter appearances.
-2. Load active rotation slots.
-3. Load active pitcher availability events.
-4. Load recent cancelled-game official announced starters as secondary signal.
-5. Score candidates.
-6. Store one SYSTEM_PREDICTED candidate for normal games.
-7. Store a second SYSTEM_PREDICTED candidate only when recent cancellation uncertainty exists.
-8. Replace display with OFFICIAL_ANNOUNCED when official starter is available.
-9. Store ACTUAL only after real starter is known.
+1. Load upcoming games.
+2. For each team, load `team_rotation_states.next_slot_no`.
+3. Resolve the active `rotation_slots` row for that slot.
+4. Store one `SYSTEM_PREDICTED` rank=1 record for that game/team.
+5. Keep KBO registration/injury/rehab events as admin context, not automatic replacement logic.
+6. Let admins adjust rotation order, next pointer, or one-game manual corrections when needed.
+7. Display `OFFICIAL_ANNOUNCED` over `SYSTEM_PREDICTED` when official starters are available.
+8. Store `ACTUAL` only after the real starter appearance is known.
+9. Advance or hold the team pointer based on actual starter/cancellation policy and admin choice.
 ```
 
 ## Open Questions For Final Schema
 
 - Should `rotation_slots.slot_no` support 6th starter explicitly or use `TEMPORARY` status?
+- Should one-game manual prediction overrides live only in `starting_pitcher_records`, or have a small admin audit table?
 - Should `pitcher_availability_events` allow team-level events without `pitcher_id`?
 - Should source be a strict check constraint or free text during MVP?
-- How much admin UI is needed versus Supabase Studio/import scripts?
+- Should MVP admin be a minimal page or Supabase Studio/import scripts first?

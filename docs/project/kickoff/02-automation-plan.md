@@ -31,10 +31,9 @@ Add these in stages:
 Recommended crawler workflows:
 
 - Sync games: 09:00 and 13:00 KST.
-- Generate predictions: 15:00 KST.
+- Generate pointer-based predictions: 15:00 KST, after any admin rotation updates.
 - Sync official starters: 17:00, 18:00, 19:00, 21:00, 23:00, and next-day 10:00 KST.
 - Sync actual starters: game-time and post-game windows.
 - Sync pitcher stats: 01:00 KST.
 
 GitHub Actions cron uses UTC, so convert KST times before committing workflow files.
-

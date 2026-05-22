@@ -51,7 +51,7 @@ Defer until after first usable MVP:
 2. Add Supabase schema SQL and seed fixtures.
 3. Implement server data access using mock/seed-backed patterns first.
 4. Build home and game detail UI.
-5. Implement prediction calculation from seeded `pitcher_appearances`.
+5. Implement prediction generation from admin-managed rotation slots and team pointers.
 6. Implement votes API and UI.
 7. Run a KBO GameCenter parser spike against public HTML.
 8. Add calendar/team views.
@@ -80,4 +80,3 @@ Core trust copy:
 ```text
 최근 선발 로테이션과 공개 데이터를 바탕으로 한 참고용 예상입니다. 승패 예측이나 베팅 목적의 정보가 아닙니다.
 ```
-

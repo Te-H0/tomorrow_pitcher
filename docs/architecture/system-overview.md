@@ -9,7 +9,7 @@ Core user flow:
 ```text
 Home today's/tomorrow's games
 → Game detail
-→ Rotation-based starter expectation
+→ Admin-managed rotation expectation
 → Fan expectation vote
 → Official announced starter
 → Actual starter record
@@ -70,6 +70,7 @@ Supabase is the source of truth for:
 - Pitcher appearances.
 - Starter records.
 - Rotation slots.
+- Team rotation states.
 - Pitcher availability events.
 - Fan votes.
 - Pitcher season stats.
@@ -121,7 +122,21 @@ The initial canonical data source is KBO public pages. Imports should keep inter
 | GameCenter starters and pitcher records | `https://www.koreabaseball.com/Schedule/GameCenter/Main.aspx` | Import official announced starters, actual starters, and pitcher appearances |
 | Pitcher records and player IDs | `https://www.koreabaseball.com/Record/Player/PitcherBasic/Basic1.aspx` | Import pitcher masters, KBO `playerId`, and season stats |
 | Pitcher detail | `https://www.koreabaseball.com/Record/Player/PitcherDetail/Basic.aspx?playerId=...` | Import pitcher profile, detail stats, recent game context, and registration-day context |
-| Player movement | `https://www.koreabaseball.com/Player/Trade.aspx` | Candidate source for injury/registration/transfer context; exact mapping is deferred |
+| Player movement | `https://www.koreabaseball.com/Player/Trade.aspx` | Import registration, de-registration, injury list, and rehabilitation context for admin review |
+
+## Prediction Model
+
+MVP v1 predictions are intentionally simple and operator-controlled:
+
+```text
+Admin manages team rotation order
+→ team_rotation_states.next_slot_no marks the next starter slot
+→ prediction job writes one SYSTEM_PREDICTED rank=1 record
+→ official announced starters display above system predictions
+→ actual starters are stored only after real appearances
+```
+
+Rainouts, skipped starts, temporary starters, and manual corrections are handled by admin actions that hold, advance, or directly set the team pointer. AI/news processing may later summarize starter-related news for operators, but must not automatically mutate prediction records in MVP v1.
 
 ## Import Data Flow
 

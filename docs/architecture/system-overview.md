@@ -122,7 +122,8 @@ The initial canonical data source is KBO public pages. Imports should keep inter
 | GameCenter starters and pitcher records | `https://www.koreabaseball.com/Schedule/GameCenter/Main.aspx` | Import official announced starters, actual starters, and pitcher appearances |
 | Pitcher records and player IDs | `https://www.koreabaseball.com/Record/Player/PitcherBasic/Basic1.aspx` | Import pitcher masters, KBO `playerId`, and season stats |
 | Pitcher detail | `https://www.koreabaseball.com/Record/Player/PitcherDetail/Basic.aspx?playerId=...` | Import pitcher profile, detail stats, recent game context, and registration-day context |
-| Player movement | `https://www.koreabaseball.com/Player/Trade.aspx` | Import registration, de-registration, injury list, and rehabilitation context for admin review |
+| Player registration status | `https://www.koreabaseball.com/Player/Register.aspx` | Import team/day registration and de-registration as the primary admin availability signal |
+| Player movement details | `https://www.koreabaseball.com/Player/Trade.aspx` | Search by player name to enrich registration/de-registration with movement reason, injury list, rehabilitation, waiver, and notes |
 
 ## Prediction Model
 
@@ -137,6 +138,16 @@ Admin manages team rotation order
 ```
 
 Rainouts, skipped starts, temporary starters, and manual corrections are handled by admin actions that hold, advance, or directly set the team pointer. AI/news processing may later summarize starter-related news for operators, but must not automatically mutate prediction records in MVP v1.
+
+KBO player availability should be collected in two layers:
+
+```text
+Register.aspx team/day registration table
+→ decide whether the pitcher is currently registered or de-registered
+Trade.aspx player-name search
+→ attach detailed context such as injury list, rehabilitation list, waiver, military hold, or registration note
+→ show as admin context only
+```
 
 ## Import Data Flow
 

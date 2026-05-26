@@ -227,6 +227,8 @@ Pitcher availability and rotation-affecting events.
 Purpose:
 
 - Track official or manually recorded availability facts such as KBO registration, de-registration, injury list, rehabilitation list, or operator notes.
+- Use KBO `Player/Register.aspx` as the primary source for team/day registration and de-registration status.
+- Use KBO `Player/Trade.aspx` player-name search as a detail source for movement reason, injury list, rehabilitation list, waiver, military hold, and notes.
 - Serve as admin context for manual rotation/pointer decisions in MVP v1.
 - Avoid over-splitting into separate injury/farm/rotation event tables.
 - Do not automatically change `rotation_slots`, `team_rotation_states`, or `starting_pitcher_records` in MVP v1.
@@ -335,7 +337,7 @@ They are not split into many event subtype tables because MVP does not need that
 2. For each team, load `team_rotation_states.next_slot_no`.
 3. Resolve the active `rotation_slots` row for that slot.
 4. Store one `SYSTEM_PREDICTED` rank=1 record for that game/team.
-5. Keep KBO registration/injury/rehab events as admin context, not automatic replacement logic.
+5. Keep KBO registration/de-registration and movement-detail events as admin context, not automatic replacement logic.
 6. Let admins adjust rotation order, next pointer, or one-game manual corrections when needed.
 7. Display `OFFICIAL_ANNOUNCED` over `SYSTEM_PREDICTED` when official starters are available.
 8. Store `ACTUAL` only after the real starter appearance is known.

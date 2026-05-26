@@ -45,7 +45,7 @@ This file tracks open questions, pending decisions, and next tasks that should n
 - [ ] Add teams seed data with canonical service codes and KBO codes.
 - [ ] Build KBO pitcher master/playerId import from pitcher record/detail pages.
 - [ ] Build KBO schedule import from `Schedule.aspx`.
-- [ ] Build KBO player movement import for registration, de-registration, injury list, and rehabilitation list as admin context.
+- [ ] Build KBO player availability import: use `Player/Register.aspx` for team/day registration and de-registration, then enrich relevant pitchers via `Player/Trade.aspx` player-name search.
 - [ ] Build GameCenter starter and pitcher appearance import.
 - [ ] Generate sample local seed data from April-May 2026 KBO records.
 - [ ] Continue 05.26~05.31 rotation-pointer prediction test: confirm each day's actual starters from KBO GameCenter `REVIEW`, update the forecast notes, and compare against the prior corrected prediction.

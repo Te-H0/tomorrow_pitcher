@@ -48,6 +48,7 @@ This file tracks open questions, pending decisions, and next tasks that should n
 - [ ] Build KBO player movement import for registration, de-registration, injury list, and rehabilitation list as admin context.
 - [ ] Build GameCenter starter and pitcher appearance import.
 - [ ] Generate sample local seed data from April-May 2026 KBO records.
+- [ ] Continue 05.26~05.31 rotation-pointer prediction test: confirm each day's actual starters from KBO GameCenter `REVIEW`, update the forecast notes, and compare against the prior corrected prediction.
 - [ ] Add `team_rotation_states` to final schema and seed one next-slot pointer per KBO team.
 - [ ] Implement first rotation prediction service from `team_rotation_states.next_slot_no`.
 - [ ] Build minimal admin workflow for team rotation order, current pointer, and manual prediction correction before advanced news/AI signals.

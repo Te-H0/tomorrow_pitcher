@@ -17,6 +17,9 @@ KBO games can be cancelled after official announced starters are known. Some tea
 - A cancelled game's official announced starters may be stored as `OFFICIAL_ANNOUNCED`.
 - A cancelled game must not create `ACTUAL` starter records.
 - A cancelled game must not create `pitcher_appearances`.
+- Post-game sync must check KBO `Schedule.aspx` first and classify the game result/status before reading GameCenter pitcher records as actual appearances.
+- Only games confirmed as played/finished should create `ACTUAL` starter records from GameCenter `REVIEW`.
+- Games marked rainout, cancelled, postponed, no-game, or otherwise not official results must keep actual starter and pitcher appearance records empty.
 - Rotation calculation should primarily use actual starter appearances.
 - Recent cancelled-game announced starters may be used only as a secondary signal for the next prediction.
 - Once a new official announced starter is published for the next game, that official record takes priority over system prediction.

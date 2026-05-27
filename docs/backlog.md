@@ -48,7 +48,7 @@ This file tracks open questions, pending decisions, and next tasks that should n
 - [ ] Build KBO player availability import: use `Player/Register.aspx` for team/day registration and de-registration, then enrich relevant pitchers via `Player/Trade.aspx` player-name search.
 - [ ] Build GameCenter starter and pitcher appearance import.
 - [ ] Generate sample local seed data from April-May 2026 KBO records.
-- [ ] Continue 05.26~05.31 rotation-pointer prediction test: confirm each day's actual starters from KBO GameCenter `REVIEW`, update the forecast notes, and compare against the prior corrected prediction.
+- [ ] Continue 05.26~05.31 rotation-pointer prediction test: 05.26 `Schedule.aspx` status and actual starters are documented; next confirm 05.27 actual starters, then update 05.28~05.31 corrected predictions.
 - [ ] Add `team_rotation_states` to final schema and seed one next-slot pointer per KBO team.
 - [ ] Implement first rotation prediction service from `team_rotation_states.next_slot_no`.
 - [ ] Build minimal admin workflow for team rotation order, current pointer, and manual prediction correction before advanced news/AI signals.

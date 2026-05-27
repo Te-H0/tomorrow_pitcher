@@ -15,6 +15,9 @@ description: Review or plan tomorrow_pitcher crawler and scheduled sync work. Us
 - Log failures with enough context to debug later.
 - Use polite request pacing and clear User-Agent.
 - Convert GitHub Actions cron from KST to UTC.
+- For post-game sync, check KBO `Schedule.aspx` before GameCenter `REVIEW`.
+- Do not treat GameCenter pitcher rows as actual starters until the schedule page confirms the game produced an official result.
+- Rainout, cancelled, postponed, or no-game rows must not write `ACTUAL` starter records or pitcher appearances.
 
 ## Required Checks
 
@@ -22,6 +25,7 @@ description: Review or plan tomorrow_pitcher crawler and scheduled sync work. Us
 - Player matching prefers stable KBO ids when available.
 - Name-only matching handles ambiguity.
 - Unmatched players do not get silently mapped to the wrong person.
+- Schedule result/status is checked before actual starter import.
 - Official starters write `OFFICIAL_ANNOUNCED`.
 - Actual starters write `ACTUAL` and update starter appearances.
 - System predictions are not overwritten by crawler results.
@@ -38,4 +42,3 @@ Return:
 - Upsert strategy.
 - Failure modes.
 - Verification plan.
-

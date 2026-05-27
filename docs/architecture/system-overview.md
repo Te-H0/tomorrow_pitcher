@@ -118,7 +118,7 @@ The initial canonical data source is KBO public pages. Imports should keep inter
 
 | Data | KBO page | Initial use |
 | --- | --- | --- |
-| Game schedule | `https://www.koreabaseball.com/Schedule/Schedule.aspx#` | Pre-register published games into `games` before prediction |
+| Game schedule and result status | `https://www.koreabaseball.com/Schedule/Schedule.aspx` | Pre-register games, then verify final status such as finished/rainout/cancelled before importing actual starters |
 | GameCenter starters and pitcher records | `https://www.koreabaseball.com/Schedule/GameCenter/Main.aspx` | Import official announced starters, actual starters, and pitcher appearances |
 | Pitcher records and player IDs | `https://www.koreabaseball.com/Record/Player/PitcherBasic/Basic1.aspx` | Import pitcher masters, KBO `playerId`, and season stats |
 | Pitcher detail | `https://www.koreabaseball.com/Record/Player/PitcherDetail/Basic.aspx?playerId=...` | Import pitcher profile, detail stats, recent game context, and registration-day context |
@@ -152,9 +152,12 @@ Trade.aspx player-name search
 ## Import Data Flow
 
 ```text
-Open KBO public page with Playwright
-→ Read rendered DOM
-→ Parse target fields
+Open KBO Schedule.aspx with Playwright
+→ Parse game date, teams, score/status, stadium, and result memo
+→ Classify whether the game produced an official result
+→ For played games, open GameCenter REVIEW and parse actual starters/pitcher appearances
+→ For upcoming games, open GameCenter PREVIEW and parse official announced starters when present
+→ For cancelled/rainout/no-game/postponed games, do not create ACTUAL starters or pitcher appearances
 → Normalize
 → Validate
 → Map teams/pitchers

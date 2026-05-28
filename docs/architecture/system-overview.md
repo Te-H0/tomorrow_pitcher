@@ -116,6 +116,8 @@ Import scripts:
 
 The initial canonical data source is KBO public pages. Imports should keep internal IDs separate from external IDs.
 
+Starter and schedule verification must stay inside the selected KBO public pages. Portal/news pages are not source data for crawler validation because they hide whether our selected DOM paths can actually produce the values. The current source and selector contract is tracked in `docs/dev-plans/kbo-source-contract.md`.
+
 | Data | KBO page | Initial use |
 | --- | --- | --- |
 | Game schedule and result status | `https://www.koreabaseball.com/Schedule/Schedule.aspx` | Pre-register games, then verify final status such as finished/rainout/cancelled before importing actual starters |

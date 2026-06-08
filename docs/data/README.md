@@ -6,6 +6,9 @@ This folder stores temporary and project-owned data used while designing seed da
 
 - `2026-05-kbo-schedule.md`: May schedule table normalized from user-provided text.
 - `2026-05-kbo-starters.md`: starter pitcher table extracted from KBO GameCenter via Playwright.
+- `2026-06-kbo-schedule.md`: June schedule table extracted from KBO `Schedule.aspx`.
+- `2026-06-kbo-starters.md`: June actual starter table extracted from KBO GameCenter `REVIEW`.
+- `2026-06-09-starter-forecast.md`: 06.09 system-predicted starter comparison workspace; official and actual columns are pending KBO publication/game completion.
 
 ## Rules
 

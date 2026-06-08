@@ -3,8 +3,10 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "data:schedule:june": "node scripts/extract-kbo-schedule.mjs 2026 06",
     "data:starters:april": "node scripts/extract-kbo-starters.mjs 04",
-    "data:starters:may": "node scripts/extract-kbo-starters.mjs 05"
+    "data:starters:may": "node scripts/extract-kbo-starters.mjs 05",
+    "data:starters:june": "node scripts/extract-kbo-starters.mjs 06"
   },
   "devDependencies": {
     "playwright": "^1.56.1"

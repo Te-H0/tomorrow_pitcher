@@ -1,8 +1,10 @@
 // 종료 경기 실제 선발 + 경기 결과 상세 수집
 //  → docs/data/starters/actual/YYYY-MM.md (실제 선발, end 경기만)
 //  → docs/data/games/YYYY-MM.md (스코어보드+투수 전원+타자 기록)
-// 소스: GameCenter 날짜 페이지 → end 경기만 REVIEW. cancel 경기는 ACTUAL 미생성(취소/노게임 기록).
-// 인자 생략 시 오늘(KST).
+// 소스: GameCenter 날짜 페이지 1회 로드 → 미기록 end 경기만 REVIEW. cancel 경기는 ACTUAL 미생성(취소/노게임 기록).
+// 조기 종료: 기존 산출물에서 이미 기록된 gameId를 파악해 재접속하지 않는다. 신규 0 + pending 0이면 즉시 no-op.
+// 인자: 생략 시 오늘(KST), "yesterday" → KST 기준 어제(자정 넘긴 미종료 경기 익일 백필용), 또는 YYYYMMDD.
+import { appendFile } from "node:fs/promises";
 import {
   DATA_DIR,
   dateLabelFromYmd,
@@ -11,6 +13,7 @@ import {
   gameState,
   kstStamp,
   kstToday,
+  kstYmdOffset,
   monthOf,
   parseTableRows,
   readFileOrEmpty,
@@ -27,12 +30,20 @@ const PITCHER_HEADERS = [
   "타수", "피안타", "홈런", "4사구", "삼진", "실점", "자책", "평균자책점",
 ];
 
-const ymd = process.argv[2] ?? kstToday();
+const rawArg = process.argv[2];
+const ymd = rawArg === "yesterday" ? kstYmdOffset(-1) : (rawArg ?? kstToday());
 if (!/^\d{8}$/.test(ymd)) {
-  console.error("Usage: node scripts/extract-kbo-review.mjs [YYYYMMDD]");
+  console.error("Usage: node scripts/extract-kbo-review.mjs [YYYYMMDD|yesterday]");
   process.exit(1);
 }
 const month = monthOf(ymd);
+
+// GITHUB_OUTPUT(Actions 스텝 출력)이 있으면 collected/pending을 append.
+async function emitStepOutputs(collected, pending) {
+  const out = process.env.GITHUB_OUTPUT;
+  if (!out) return;
+  await appendFile(out, `collected=${collected}\npending=${pending}\n`);
+}
 
 async function parseReview(page) {
   return page.evaluate(() => {
@@ -167,6 +178,22 @@ function emptyGamesFile() {
 }
 
 // ---------------------------------------------------------------------------
+// 기존 산출물에서 이미 기록된 gameId를 먼저 파악한다(멱등·조기 종료의 근거).
+const actualPath = `${DATA_DIR}/starters/actual/${month}.md`;
+const gamesPath = `${DATA_DIR}/games/${month}.md`;
+const existingActual = await readFileOrEmpty(actualPath);
+const existingGames = await readFileOrEmpty(gamesPath);
+
+// actual 본문 행(원정 선발 테이블) + games 섹션 헤딩 = 이미 처리한 end 경기.
+const recordedEndIds = new Set([
+  ...parseTableRows(existingActual, "원정 선발").map((r) => r[1]),
+  ...(existingGames.match(/^##\s+.*\(([^)]+)\)\s*$/gm) ?? [])
+    .map((line) => line.match(/\(([^)]+)\)\s*$/)?.[1])
+    .filter(Boolean),
+]);
+// actual 취소 섹션(사유 테이블) = 이미 처리한 cancel 경기.
+const recordedCancelIds = new Set(parseTableRows(existingActual, "사유").map((r) => r[1]));
+
 const result = await withBrowser(async (page) => {
   await page.goto(gameCenterDateUrl(ymd), { waitUntil: "domcontentloaded", timeout: 45000 });
   await page.waitForTimeout(4000);
@@ -177,14 +204,21 @@ const result = await withBrowser(async (page) => {
   const actualRows = [];
   const cancelRows = [];
   const gameSections = [];
-  let endCount = 0;
+  let pendingCount = 0; // 예정·진행중·서스펜디드 (아직 ACTUAL 없음)
+  let skipCount = 0; // 이미 기록돼 재접속하지 않은 경기
+  let newEndAttempted = 0; // 미기록 end 경기 REVIEW 시도 수 (DOM 계약 검증용)
 
   for (const g of games) {
     const state = gameState(g.cls);
+    const gid = g.attrs.g_id;
     if (state === "cancel") {
+      if (recordedCancelIds.has(gid)) {
+        skipCount += 1;
+        continue;
+      }
       cancelRows.push([
         dateLabelFromYmd(g.attrs.g_dt),
-        g.attrs.g_id,
+        gid,
         g.attrs.away_nm,
         g.attrs.home_nm,
         g.attrs.s_nm,
@@ -192,10 +226,18 @@ const result = await withBrowser(async (page) => {
       ]);
       continue;
     }
-    if (state !== "end") continue; // 예정/진행 중은 아직 ACTUAL 없음
-    endCount += 1;
+    if (state !== "end") {
+      pendingCount += 1; // 예정/진행 중/서스펜디드 — 다음 회차 또는 익일 백필 대상
+      continue;
+    }
+    // end 경기: 이미 기록됐으면 재접속하지 않는다.
+    if (recordedEndIds.has(gid)) {
+      skipCount += 1;
+      continue;
+    }
+    newEndAttempted += 1;
 
-    await page.goto(gameCenterReviewUrl(g.attrs.g_dt, g.attrs.g_id), {
+    await page.goto(gameCenterReviewUrl(g.attrs.g_dt, gid), {
       waitUntil: "domcontentloaded",
       timeout: 45000,
     });
@@ -205,7 +247,7 @@ const result = await withBrowser(async (page) => {
 
     actualRows.push([
       dateLabelFromYmd(g.attrs.g_dt),
-      g.attrs.g_id,
+      gid,
       g.attrs.away_nm,
       starterName(review.awayPitchers),
       g.attrs.home_nm,
@@ -217,29 +259,45 @@ const result = await withBrowser(async (page) => {
     await sleep(500);
   }
 
-  return { gamesTotal: games.length, endCount, actualRows, cancelRows, gameSections };
+  return { gamesTotal: games.length, pendingCount, skipCount, newEndAttempted, actualRows, cancelRows, gameSections };
 });
 
 if (result.gamesTotal === 0) {
   console.log(`No games scheduled on ${ymd}. (해당 날짜 경기 없음) — 정상 종료.`);
+  await emitStepOutputs(0, 0);
   process.exit(0);
 }
-if (result.endCount > 0 && result.actualRows.length === 0) {
-  console.error(`Found ${result.endCount} finished games but parsed 0 actual starters — DOM 계약 의심.`);
+if (result.newEndAttempted > 0 && result.actualRows.length === 0) {
+  console.error(`Attempted ${result.newEndAttempted} finished games but parsed 0 actual starters — DOM 계약 의심.`);
   process.exit(1);
 }
 
-// actual/YYYY-MM.md upsert (end 행 + 취소 행)
-const actualPath = `${DATA_DIR}/starters/actual/${month}.md`;
-const existing = await readFileOrEmpty(actualPath);
+const newCollected = result.actualRows.length + result.cancelRows.length;
+console.log(
+  `${ymd}: 신규 수집 ${result.actualRows.length}건, 신규 취소 ${result.cancelRows.length}건, ` +
+    `잔여(pending) ${result.pendingCount}건, 스킵 ${result.skipCount}건 (총 ${result.gamesTotal}경기).`,
+);
+await emitStepOutputs(newCollected, result.pendingCount);
+
+// 신규가 없으면 파일을 건드리지 않는다(멱등: 갱신 시각 라인만 바뀌어 diff 나는 것 방지).
+if (newCollected === 0) {
+  if (result.pendingCount === 0) {
+    console.log("오늘 경기 전부 처리 완료 — 신규 없음.");
+  } else {
+    console.log(`신규 없음 · 잔여 ${result.pendingCount}건은 다음 회차/익일 백필 대상 — 정상 종료.`);
+  }
+  process.exit(0);
+}
+
+// actual/YYYY-MM.md upsert (신규 end 행 + 신규 취소 행)
 const mergedActual = upsertRows(
-  parseTableRows(existing, "원정 선발"),
+  parseTableRows(existingActual, "원정 선발"),
   result.actualRows,
   (r) => r[1],
   (a, b) => a[1].localeCompare(b[1]),
 );
 const mergedCancel = upsertRows(
-  parseTableRows(existing, "사유"),
+  parseTableRows(existingActual, "사유"),
   result.cancelRows,
   (r) => r[1],
   (a, b) => a[1].localeCompare(b[1]),
@@ -247,8 +305,7 @@ const mergedCancel = upsertRows(
 await writeFileEnsured(actualPath, renderActual(mergedActual, mergedCancel));
 
 // games/YYYY-MM.md 섹션 교체
-const gamesPath = `${DATA_DIR}/games/${month}.md`;
-let gamesContent = (await readFileOrEmpty(gamesPath)) || emptyGamesFile();
+let gamesContent = existingGames || emptyGamesFile();
 // 최신 갱신 시각 라인 교체
 gamesContent = gamesContent.replace(/^마지막 갱신:.*$/m, `마지막 갱신: ${kstStamp()} · 생성 스크립트: extract-kbo-review.mjs`);
 for (const s of result.gameSections) {
@@ -257,5 +314,5 @@ for (const s of result.gameSections) {
 await writeFileEnsured(gamesPath, gamesContent);
 
 console.log(
-  `${ymd}: total ${result.gamesTotal} games, end ${result.endCount}, actual ${result.actualRows.length}, cancel ${result.cancelRows.length}. Wrote ${actualPath} + ${gamesPath}.`,
+  `Wrote ${actualPath} + ${gamesPath} (신규 수집 ${result.actualRows.length} · 신규 취소 ${result.cancelRows.length}).`,
 );

@@ -1,0 +1,37 @@
+name: sync-daily
+
+# KST 08:00 (= UTC 23:00 전날). 당월 일정 + 순위 + 등록/말소 보정 1회.
+on:
+  schedule:
+    - cron: "0 23 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: data-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci
+      - run: npx playwright install chromium --with-deps
+      - name: 당월 일정
+        run: node scripts/extract-kbo-schedule.mjs
+      - name: 순위 스냅샷
+        run: node scripts/extract-kbo-standings.mjs
+      - name: 등록/말소 보정
+        run: node scripts/extract-kbo-availability.mjs
+      - name: commit & push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/data
+          git diff --cached --quiet || (git commit -m "data: sync-daily 일정/순위/등록말소 갱신" && git pull --rebase && git push)

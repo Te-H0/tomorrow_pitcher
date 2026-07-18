@@ -1,0 +1,38 @@
+name: sync-preview
+
+# 공식 예고 선발 반복 수집. KST 09,12,15,18,21,23시.
+# 15시(UTC 06) 회차에는 등록/말소도 함께 수집.
+on:
+  schedule:
+    - cron: "0 0,3,9,12,14 * * *" # KST 09,12,18,21,23 — preview만
+    - cron: "0 6 * * *"           # KST 15 — preview + availability
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: data-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci
+      - run: npx playwright install chromium --with-deps
+      - name: 예고 선발 (오늘+내일)
+        run: node scripts/extract-kbo-preview.mjs
+      - name: 등록/말소 (15시 회차 전용)
+        if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 6 * * *'
+        run: node scripts/extract-kbo-availability.mjs
+      - name: commit & push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/data
+          git diff --cached --quiet || (git commit -m "data: sync-preview 예고 선발 갱신" && git pull --rebase && git push)

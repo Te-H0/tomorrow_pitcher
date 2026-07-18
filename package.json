@@ -3,10 +3,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "data:schedule:june": "node scripts/extract-kbo-schedule.mjs 2026 06",
-    "data:starters:april": "node scripts/extract-kbo-starters.mjs 04",
-    "data:starters:may": "node scripts/extract-kbo-starters.mjs 05",
-    "data:starters:june": "node scripts/extract-kbo-starters.mjs 06"
+    "data:schedule": "node scripts/extract-kbo-schedule.mjs",
+    "data:preview": "node scripts/extract-kbo-preview.mjs",
+    "data:review": "node scripts/extract-kbo-review.mjs",
+    "data:standings": "node scripts/extract-kbo-standings.mjs",
+    "data:availability": "node scripts/extract-kbo-availability.mjs",
+    "data:forecast": "node scripts/generate-starter-forecast.mjs"
   },
   "devDependencies": {
     "playwright": "^1.56.1"

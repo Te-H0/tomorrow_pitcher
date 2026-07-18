@@ -25,6 +25,12 @@ jobs:
       - run: npx playwright install chromium --with-deps
       - name: 당월 일정
         run: node scripts/extract-kbo-schedule.mjs
+      - name: 어제 잔여 경기 백필
+        # 자정 넘겨 종료된 미기록 경기를 아침에 보정 수집(멱등, 신규 없으면 즉시 no-op).
+        run: node scripts/extract-kbo-review.mjs yesterday
+      - name: 아침 예측 최신화
+        # 백필로 갱신된 실제 선발을 반영해 오늘~D+3 예측 재생성(멱등이라 안전).
+        run: node scripts/generate-starter-forecast.mjs
       - name: 순위 스냅샷
         run: node scripts/extract-kbo-standings.mjs
       - name: 등록/말소 보정

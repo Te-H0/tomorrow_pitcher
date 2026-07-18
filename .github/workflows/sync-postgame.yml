@@ -24,10 +24,13 @@ jobs:
       - run: npm ci
       - run: npx playwright install chromium --with-deps
       - name: 실제 선발 + 경기 결과 (오늘)
+        id: review
         run: node scripts/extract-kbo-review.mjs
       - name: 순위 스냅샷
+        if: steps.review.outputs.collected != '0'
         run: node scripts/extract-kbo-standings.mjs
       - name: 예상 선발 (오늘~D+3)
+        if: steps.review.outputs.collected != '0'
         run: node scripts/generate-starter-forecast.mjs
       - name: commit & push
         run: |

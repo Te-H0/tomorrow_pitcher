@@ -65,6 +65,9 @@ await withBrowser(async (page) => {
     const stamp = kstStamp();
 
     for (const g of games) {
+      // 경기 시작 후에는 away_p_id/home_p_id가 예고 선발이 아니라 현재 투수로 바뀐다
+      // (07.18 라이브 수집 오염 실측). 경기 전(game_sc=1) 상태에서만 예고로 신뢰한다.
+      if (g.attrs.game_sc !== "1") continue;
       if (g.attrs.start_ck !== "1") continue; // 예고 발표된 경기만
       const gameId = g.attrs.g_id;
       const month = monthOf(g.attrs.g_dt);

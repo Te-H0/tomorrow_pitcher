@@ -69,6 +69,7 @@ docs
 
 ## Data Rules
 
+- The verification-stage data pipeline lives in `docs/data/` with `scripts/*.mjs` collectors and GitHub Actions. `docs/data/README.md` is the AI catalog: read it first for any data request or collector command.
 - Display priority is `ACTUAL > OFFICIAL_ANNOUNCED > SYSTEM_PREDICTED`.
 - `starting_pitcher_records` current-row replacement must be transactional.
 - Store unresolved or low-confidence crawler matches for review instead of silently guessing.

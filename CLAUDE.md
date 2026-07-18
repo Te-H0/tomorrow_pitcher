@@ -6,6 +6,7 @@ Core references:
 
 - `AGENTS.md`
 - `MEMORY.md`
+- `docs/data/README.md` (검증 운영 단계 데이터 카탈로그 — 데이터 요청/수집 스크립트 대응)
 - `docs/codex/operating-manual.md`
 - `docs/codex/engineering-standards.md`
 - `docs/codex/spec-driven-workflow.md`

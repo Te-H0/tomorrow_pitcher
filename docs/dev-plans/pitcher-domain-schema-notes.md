@@ -41,7 +41,7 @@ source
 Rules:
 
 - `kbo_player_id` comes from KBO pitcher record/detail URLs such as `PitcherDetail/Basic.aspx?playerId=...`.
-- GameCenter pitcher tables do not expose `playerId`; GameCenter records should match pitchers by `team + name` after pitcher masters are imported.
+- GameCenter REVIEW pitcher tables show name only, but the GameCenter **date page** `li.game-cont` attributes expose `away_p_id`/`home_p_id` = KBO `playerId` for both preview and actual starters (confirmed 2026-07-18). Prefer that playerId; fall back to `team + name` matching where absent.
 - If the service later needs hitter features, add `hitters` and hitter stat tables then. Reconsider a generic `players` table only when there is a real cross-player feature.
 
 ### `games`

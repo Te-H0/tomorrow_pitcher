@@ -44,10 +44,13 @@ This file tracks open questions, pending decisions, and next tasks that should n
 - [ ] Write final Supabase SQL migration for confirmed pitcher-first schema.
 - [ ] Add teams seed data with canonical service codes and KBO codes.
 - [ ] Build KBO pitcher master/playerId import from pitcher record/detail pages.
-- [ ] Build KBO schedule import from `Schedule.aspx`.
-- [ ] Build KBO player availability import: use `Player/Register.aspx` for team/day registration and de-registration, then enrich relevant pitchers via `Player/Trade.aspx` player-name search.
-- [ ] Build GameCenter starter and pitcher appearance import.
-- [ ] Finalize DOM selector contract for `Schedule.aspx` status rows and GameCenter `PREVIEW` official starters.
+- [x] Build KBO schedule import from `Schedule.aspx`. (`extract-kbo-schedule.mjs`)
+- [x] Build KBO player availability import from `Player/Register.aspx` (당일 등록/말소, `extract-kbo-availability.mjs`). Trade.aspx enrich는 이번 단계 제외.
+- [x] Build GameCenter starter and pitcher appearance import. (preview=예고, review=실제+박스스코어)
+- [x] Finalize DOM selector contract for `Schedule.aspx` status rows and GameCenter official starters. (2026-07-18 라이브 프로브로 확정, `kbo-source-contract.md` 반영)
+- [ ] **Actions 러너(해외 IP)에서 koreabaseball.com 접근 가능 여부 검증**: sync-daily 하나만 먼저 머지해 수동 실행. 차단 시 셀프호스티드 러너 검토.
+- [ ] 라이브 경기 상태 파서 한계 대응 검토: Schedule.aspx는 진행 중 당일 경기를 "미정"·gameId 빈값으로, GameCenter 날짜 페이지는 과거일을 가까운 유효일로 clamp함(현재는 `g_dt===요청일` 필터로 방어).
+- [ ] `rotation/slots.md`·`pointers.md` 시드 사람 검토: 올스타 브레이크 직후 actual(07.08·09·16·17) 기반 잠정값이라 슬롯 순서 확정 필요.
 - [ ] Update `docs/data/2026-06-09-starter-forecast.md` when KBO GameCenter `PREVIEW` publishes 06.09 official announced starters.
 - [ ] After 06.09 games finish, verify `Schedule.aspx` statuses first, then extract GameCenter `REVIEW` actual starters and compare against 06.09 system/official records.
 - [ ] Use 23:10 KST only as a manual-test reminder for post-game actual starter verification; production scheduler should trigger from KBO game status checks.

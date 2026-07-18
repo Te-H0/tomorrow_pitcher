@@ -13,9 +13,9 @@ DB/서버 없이 GitHub Actions가 KBO 공개 페이지를 수집해 이 폴더�
 |---|---|---|---|---|
 | 월별 일정+상태 | `schedule/YYYY-MM.md` | `Schedule.aspx` | sync-daily 08:00 | 진행 중 당일 경기는 상태 "미정"·gameId 빈값(한계). |
 | 공식 예고 선발 | `starters/official/YYYY-MM.md` | GameCenter 날짜 페이지 `li.game-cont`(start_ck=1) | sync-preview 09/12/15/18/21/23 | gameId당 1행. 하단 `## 변경 이력`에 예고 교체 기록. |
-| 실제 선발 | `starters/actual/YYYY-MM.md` | GameCenter REVIEW(등판=선발) | sync-postgame 21:30~24:30 | ACTUAL(최상위 신뢰). 취소 경기는 `## 취소/노게임`에만 기록. |
-| 시스템 예상 선발 | `starters/predicted/YYYY-MM.md` | rotation/* + schedule + official | sync-postgame 마지막 | 생성물. 예측은 사후 수정 없음, 비교 컬럼으로만 검증. |
-| 경기 결과 상세 | `games/YYYY-MM.md` | GameCenter REVIEW | sync-postgame | 스코어보드 + 투수 전원 + 타자 기록. 경기당 1섹션. |
+| 실제 선발 | `starters/actual/YYYY-MM.md` | GameCenter REVIEW(등판=선발) | sync-postgame 21:30~24:30 + sync-daily 08:00(익일 백필) | ACTUAL(최상위 신뢰). 취소 경기는 `## 취소/노게임`에만 기록. 미기록 end 경기만 REVIEW 접속. |
+| 시스템 예상 선발 | `starters/predicted/YYYY-MM.md` | rotation/* + schedule + official | sync-postgame(신규 있을 때) + sync-daily 아침 1회 | 생성물. 예측은 사후 수정 없음, 비교 컬럼으로만 검증. |
+| 경기 결과 상세 | `games/YYYY-MM.md` | GameCenter REVIEW | sync-postgame + sync-daily 08:00(익일 백필) | 스코어보드 + 투수 전원 + 타자 기록. 경기당 1섹션. |
 | 일자별 순위 | `standings/YYYY-MM.md` | `TeamRankDaily.aspx` | sync-daily + sync-postgame | 순위표 + 팀간 승패표. 날짜당 1섹션. |
 | 일자별 등록/말소 | `availability/YYYY-MM.md` | `Register.aspx`(팀 10곳) | sync-daily 08:00 + sync-preview 15:00 | 전 팀 변동 없으면 "변동 없음". |
 | 로테이션 슬롯 | `rotation/slots.md` | 수동(사람/AI) | 수시 | 팀별 선발 순서. 뉴스 보고 편집. |
@@ -29,7 +29,8 @@ DB/서버 없이 GitHub Actions가 KBO 공개 페이지를 수집해 이 폴더�
 - **"이번 달 경기 일정/결과 줘"** → `schedule/YYYY-MM.md` 읽고 답변.
   오래됐으면 `node scripts/extract-kbo-schedule.mjs` (당월) 또는 `... YYYY MM`.
 - **"실제 선발 기록 줘"** → `starters/actual/YYYY-MM.md`.
-  최신 아니면 `node scripts/extract-kbo-review.mjs [YYYYMMDD]` (기본 오늘).
+  최신 아니면 `node scripts/extract-kbo-review.mjs [YYYYMMDD|yesterday]` (기본 오늘).
+  이미 기록된 gameId(actual 본문·취소 섹션·`games/` 섹션)는 재접속하지 않고, **미기록 end 경기만** REVIEW 수집한다. 신규 0 + 잔여(pending) 0이면 파일을 건드리지 않고 즉시 종료(멱등). 자정 넘겨 종료된 미기록 경기는 다음 날 아침 `yesterday` 백필로 보정된다.
 - **"내일 선발 예측 줘"** → `starters/predicted/YYYY-MM.md` 확인.
   최신 아니면 `node scripts/generate-starter-forecast.mjs` 후 답변.
 - **"예고 선발 떴어?"** → `starters/official/YYYY-MM.md` 확인.
@@ -52,7 +53,7 @@ DB/서버 없이 GitHub Actions가 KBO 공개 페이지를 수집해 이 폴더�
 ```bash
 node scripts/extract-kbo-schedule.mjs [YYYY] [MM]     # 기본: 당월(KST)
 node scripts/extract-kbo-preview.mjs [YYYYMMDD]       # 기본: 오늘+내일
-node scripts/extract-kbo-review.mjs [YYYYMMDD]        # 기본: 오늘
+node scripts/extract-kbo-review.mjs [YYYYMMDD|yesterday]  # 기본: 오늘. yesterday=KST 어제(익일 백필)
 node scripts/extract-kbo-standings.mjs                # 당일 순위
 node scripts/extract-kbo-availability.mjs             # 당일 등록/말소(10팀)
 node scripts/generate-starter-forecast.mjs [D+N]      # 기본: 오늘~D+3

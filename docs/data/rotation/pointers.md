@@ -1,6 +1,6 @@
 # 팀별 로테이션 포인터
 
-마지막 갱신: 2026-07-21 08:47 KST · generate-starter-forecast.mjs (auto) / 수동 편집 병행
+마지막 갱신: 2026-07-21 22:51 KST · generate-starter-forecast.mjs (auto) / 수동 편집 병행
 
 > 다음 선발 슬롯 포인터. auto=어제 실제와 일치해 전진, auto-hold=불일치/취소로 유지(사람 확인 필요).
 

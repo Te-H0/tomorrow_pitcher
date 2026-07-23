@@ -119,6 +119,16 @@ function pitcherAt(slotList, slotNo) {
   return slotList.find((s) => s.slot === slotNo)?.pitcher ?? "";
 }
 
+// 투수 이름으로 슬롯 번호를 찾는다. 상태(ACTIVE/TEMPORARY/INACTIVE)와 무관하게
+// 슬롯 목록에 이름이 있으면 "로테이션에 아는 투수"로 본다. 없으면 null(콜업·땜빵).
+// 재정렬(re-anchor)의 기준: 실제 선발이 아는 투수면 그 슬롯을 앵커로 삼는다.
+function findSlotByPitcher(slotList, pitcherName) {
+  const name = (pitcherName ?? "").trim();
+  if (!name) return null;
+  const hit = slotList.find((s) => (s.pitcher ?? "").trim() === name);
+  return hit ? hit.slot : null;
+}
+
 // --- 입력 로드 -------------------------------------------------------------
 const slotsContent = await readFileOrEmpty(`${DATA_DIR}/rotation/slots.md`);
 const pointersContent = await readFileOrEmpty(`${DATA_DIR}/rotation/pointers.md`);
@@ -157,17 +167,29 @@ for (const [team, ptr] of pointers) {
     // 포인터가 제외 슬롯(INACTIVE/PENDING)을 가리키면 실제 예측에 쓰인 슬롯 기준으로 비교한다.
     const effSlot = resolveForecastSlot(slotList, ptr.nextSlot);
     const expected = effSlot == null ? "" : pitcherAt(slotList, effSlot);
-    if (expected && y.starter && expected === y.starter) {
-      ptr.nextSlot = nextSlotNumber(slotList, effSlot);
+    // 규칙: 포인터는 "가장 최근에 나온, 로테이션에 아는 투수"를 따라간다.
+    // 실제 선발이 슬롯 목록에 있으면(적중이든 순서 빗나감이든) 그 투수 슬롯 기준으로 재정렬한다.
+    // 없으면(콜업·땜빵) 보류하고 사람 확인을 기다린다. 이후 아는 투수가 다시 나오면 그때 자동 복구.
+    const anchorSlot = findSlotByPitcher(slotList, y.starter);
+    if (anchorSlot != null) {
+      ptr.nextSlot = nextSlotNumber(slotList, anchorSlot);
       ptr.lastGame = y.gameId;
       ptr.updatedAt = stamp;
-      ptr.updatedBy = "auto";
-      ptr.memo = "";
+      if (expected && expected === y.starter) {
+        // 예측 적중: 기존 정상 전진.
+        ptr.updatedBy = "auto";
+        ptr.memo = "";
+      } else {
+        // 예측은 빗나갔지만 아는 투수 → 그 투수 기준으로 재정렬(자동 교정).
+        ptr.updatedBy = "auto-reanchor";
+        ptr.memo = `재정렬: 실제 ${y.starter}(슬롯 ${anchorSlot}) 기준으로 포인터 이동`;
+      }
     } else {
+      // 로테이션에 없는 투수 → 보류. slots.md에 반영되면 다음부터 아는 투수로 처리됨.
       ptr.lastGame = y.gameId;
       ptr.updatedAt = stamp;
       ptr.updatedBy = "auto-hold";
-      ptr.memo = `확인 필요: 예상(${expected || "-"}) != 실제(${y.starter || "-"})`;
+      ptr.memo = `확인 필요: ${y.starter || "-"} 로테이션 미등록 선발`;
     }
   } else if (yCancelTeams.has(team)) {
     ptr.updatedAt = stamp;
@@ -183,7 +205,7 @@ function renderPointers(map) {
     "",
     `마지막 갱신: ${stamp} · generate-starter-forecast.mjs (auto) / 수동 편집 병행`,
     "",
-    "> 다음 선발 슬롯 포인터. auto=어제 실제와 일치해 전진, auto-hold=불일치/취소로 유지(사람 확인 필요).",
+    "> 다음 선발 슬롯 포인터. auto=예측 적중 전진, auto-reanchor=아는 로테이션 투수 나와 그 슬롯 기준 재정렬, auto-hold=로테이션 미등록 투수·취소로 유지(사람 확인 필요).",
     "",
     "| 팀 | 다음 슬롯 | 마지막 반영 경기 | 갱신 시각(KST) | 갱신 주체 | 메모 |",
     "|---|---|---|---|---|---|",

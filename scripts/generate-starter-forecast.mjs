@@ -1,7 +1,8 @@
 // 시스템 예상 선발 생성 → docs/data/starters/predicted/YYYY-MM.md + rotation/pointers.md 갱신
 // 입력: rotation/slots.md + rotation/pointers.md + schedule + official + actual
-// 로직: 어제 실제 선발로 포인터 자동 전진, 오늘~D+N 예상 선발 산출(포인터 슬롯 투수).
-// 예측은 사후 수정하지 않는다(immutable). 공식/실제와의 차이는 "비교" 컬럼으로만 남긴다.
+// 로직: 어제 실제 선발로 포인터 자동 전진/재정렬, 오늘~D+N 예상 선발 산출(포인터 슬롯 투수).
+// 예측 동결(Model B): 공식 예고가 뜨기 전까지는 현재 포인터로 갱신(재정렬 반영),
+// 공식 예고 확인 시점에 동결. 동결 후에는 수정하지 않으며 "비교" 컬럼으로 적중을 기록한다.
 import {
   DATA_DIR,
   dateLabelFromYmd,
@@ -269,10 +270,9 @@ for (let off = 0; off <= horizon; off += 1) {
       const predicted = pitcherAt(slotList, slotNo);
       if (!predicted) continue;
       const off2 = officialStarter(offRows, gameId, team);
-      const compare = off2 ? (off2 === predicted ? "일치" : "불일치") : "예고대기";
       if (!predictedByMonth.has(month)) predictedByMonth.set(month, []);
       predictedByMonth.get(month).push({
-        dateLabel, gameId, team, predicted, slotNo, compare,
+        dateLabel, gameId, team, predicted, slotNo, official: off2,
       });
     }
   }
@@ -286,7 +286,7 @@ function renderPredicted(month, rows) {
     "",
     `마지막 갱신: ${stamp} · generate-starter-forecast.mjs`,
     "",
-    "> 로테이션 포인터 기반 예상 선발(SYSTEM_PREDICTED, 최하위 신뢰). 예측은 사후 수정하지 않으며 비교 컬럼으로만 검증한다.",
+    "> 로테이션 포인터 기반 예상 선발(SYSTEM_PREDICTED, 최하위 신뢰). 공식 예고 전까지 갱신되고 예고 확인 시 동결, 비교 컬럼으로 적중을 검증한다.",
     "",
     "| 날짜 | gameId | 팀 | 예상 선발 | 근거 슬롯 | 생성 시각(KST) | 비교 |",
     "|---|---|---|---|---|---|---|",
@@ -295,6 +295,10 @@ function renderPredicted(month, rows) {
   return `${lines.join("\n")}\n`;
 }
 
+// 동결 규칙(Model B): 공식 예고가 확인된 시점(비교=일치/불일치)에 예측을 동결한다.
+// 그 전(비교=예고대기)까지는 현재 포인터 기준으로 계속 갱신 → 포인터 재정렬이 미래 예측에 반영된다.
+// 동결 후에는 포인터가 더 움직여도 그 행을 건드리지 않아 적중률 기록이 보존된다.
+const FROZEN_COMPARE = new Set(["일치", "불일치"]);
 let totalPred = 0;
 for (const [month, preds] of predictedByMonth) {
   const path = `${DATA_DIR}/starters/predicted/${month}.md`;
@@ -304,12 +308,13 @@ for (const [month, preds] of predictedByMonth) {
   for (const p of preds) {
     const key = `${p.gameId}|${p.team}`;
     const prev = byKey.get(key);
-    if (prev) {
-      // immutable: 예상 선발/근거 슬롯/생성 시각 유지, 비교만 갱신
-      byKey.set(key, [prev[0], prev[1], prev[2], prev[3], prev[4], prev[5], p.compare]);
-    } else {
-      byKey.set(key, [p.dateLabel, p.gameId, p.team, p.predicted, `슬롯 ${p.slotNo}`, stamp, p.compare]);
-    }
+    // 이미 공식 예고 시점에 동결된 행은 그대로 둔다.
+    if (prev && FROZEN_COMPARE.has(prev[6])) continue;
+    // 미동결(예고대기) 또는 신규 → 현재 포인터 예측으로 갱신. 공식 예고가 있으면 이 값으로 동결.
+    const compare = p.official ? (p.official === p.predicted ? "일치" : "불일치") : "예고대기";
+    // 예측 값이 그대로면 생성 시각 유지(불필요한 diff 방지), 바뀌면 갱신.
+    const genAt = prev && prev[3] === p.predicted ? prev[5] : stamp;
+    byKey.set(key, [p.dateLabel, p.gameId, p.team, p.predicted, `슬롯 ${p.slotNo}`, genAt, compare]);
   }
   const rows = [...byKey.values()].sort((a, b) => (a[1] === b[1] ? a[2].localeCompare(b[2]) : a[1].localeCompare(b[1])));
   await writeFileEnsured(path, renderPredicted(month, rows));

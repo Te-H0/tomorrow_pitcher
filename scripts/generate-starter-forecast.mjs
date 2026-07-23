@@ -72,12 +72,47 @@ function parsePointers(content) {
   return map;
 }
 
+// --- 슬롯 상태 규칙 ---------------------------------------------------------
+// ACTIVE / TEMPORARY = 예측 대상.
+// INACTIVE(부상·이탈) / PENDING(대체 투수 미정) = 예측 제외.
+// 투수 이름이 비었거나 "(부상 대체 투수)"처럼 괄호로 시작하는 플레이스홀더도 제외.
+const FORECASTABLE_STATUSES = new Set(["ACTIVE", "TEMPORARY"]);
+
+function isForecastable(slot) {
+  if (!slot) return false;
+  const name = (slot.pitcher ?? "").trim();
+  if (!name || name.startsWith("(")) return false;
+  // 상태 셀에 메모성 수식이 붙어도 첫 토큰만 본다.
+  const status = (slot.status ?? "").trim().toUpperCase().split(/[^A-Z]/)[0];
+  return FORECASTABLE_STATUSES.has(status);
+}
+
+// startSlot부터 순환하며 첫 번째 예측 가능 슬롯을 찾는다.
+// 포인터가 INACTIVE/PENDING 슬롯을 가리키면 다음 유효 슬롯으로 건너뛰는 것이 목적.
+// 유효 슬롯이 하나도 없으면 null (해당 팀 예측 생략, 에러 아님).
+// 순회 횟수를 슬롯 수로 제한해 무한 루프를 막는다.
+function resolveForecastSlot(slotList, startSlot) {
+  if (!slotList.length) return null;
+  let idx = slotList.findIndex((s) => s.slot === startSlot);
+  if (idx === -1) idx = 0; // 포인터가 없는 슬롯을 가리키면 첫 슬롯부터 탐색
+  for (let step = 0; step < slotList.length; step += 1) {
+    const cand = slotList[(idx + step) % slotList.length];
+    if (isForecastable(cand)) return cand.slot;
+  }
+  return null;
+}
+
+// current 다음의 예측 가능 슬롯(순환). 제외 슬롯은 건너뛴다.
+// 유효 슬롯이 없으면 current를 그대로 둔다(전진 불가).
 function nextSlotNumber(slotList, current) {
-  const nums = slotList.map((s) => s.slot);
-  if (!nums.length) return current;
-  const idx = nums.indexOf(current);
-  if (idx === -1) return nums[0];
-  return nums[(idx + 1) % nums.length];
+  if (!slotList.length) return current;
+  const idx = slotList.findIndex((s) => s.slot === current);
+  if (idx === -1) return resolveForecastSlot(slotList, current) ?? current;
+  for (let step = 1; step <= slotList.length; step += 1) {
+    const cand = slotList[(idx + step) % slotList.length];
+    if (isForecastable(cand)) return cand.slot;
+  }
+  return current;
 }
 
 function pitcherAt(slotList, slotNo) {
@@ -119,9 +154,11 @@ for (const [team, ptr] of pointers) {
   const y = yStarterByTeam.get(team);
   if (y) {
     if (ptr.lastGame === y.gameId) continue; // 이미 반영됨(멱등)
-    const expected = pitcherAt(slotList, ptr.nextSlot);
+    // 포인터가 제외 슬롯(INACTIVE/PENDING)을 가리키면 실제 예측에 쓰인 슬롯 기준으로 비교한다.
+    const effSlot = resolveForecastSlot(slotList, ptr.nextSlot);
+    const expected = effSlot == null ? "" : pitcherAt(slotList, effSlot);
     if (expected && y.starter && expected === y.starter) {
-      ptr.nextSlot = nextSlotNumber(slotList, ptr.nextSlot);
+      ptr.nextSlot = nextSlotNumber(slotList, effSlot);
       ptr.lastGame = y.gameId;
       ptr.updatedAt = stamp;
       ptr.updatedBy = "auto";
@@ -203,7 +240,10 @@ for (let off = 0; off <= horizon; off += 1) {
       const slotList = slots.get(team) ?? [];
       const ptr = pointers.get(team);
       if (!ptr) continue;
-      const slotNo = ptr.nextSlot;
+      // 포인터가 부상 이탈(INACTIVE)·미정(PENDING) 슬롯을 가리키면 다음 유효 슬롯으로 건너뛴다.
+      // 유효 슬롯이 하나도 없는 팀은 예측을 생략한다(에러 아님).
+      const slotNo = resolveForecastSlot(slotList, ptr.nextSlot);
+      if (slotNo == null) continue;
       const predicted = pitcherAt(slotList, slotNo);
       if (!predicted) continue;
       const off2 = officialStarter(offRows, gameId, team);

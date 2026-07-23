@@ -54,6 +54,15 @@ const normalizedRows = await withBrowser(async (page) => {
   await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45000 });
   await page.waitForSelector("#tblScheduleList tbody tr", { timeout: 30000 });
 
+  // 주의: URL의 year/month 쿼리는 드롭다운 값만 세팅하고 리스트 테이블은 갱신하지 않는다
+  // (테이블은 별도 AJAX로 "현재 월"을 그린다). 드롭다운 change 이벤트를 실제로 발생시켜야
+  // 요청한 달의 데이터가 로드된다. 이 단계를 빼면 엉뚱한 달 데이터를 요청한 달 파일에 덮어쓴다.
+  await page.selectOption("#ddlYear", year);
+  await page.waitForTimeout(1500);
+  await page.selectOption("#ddlMonth", month);
+  await page.waitForTimeout(4000);
+  await page.waitForSelector("#tblScheduleList tbody tr", { timeout: 30000 });
+
   const rows = await page.locator("#tblScheduleList tbody tr").evaluateAll((tableRows) => {
     let currentDate = "";
     return tableRows
@@ -102,6 +111,17 @@ const normalizedRows = await withBrowser(async (page) => {
 
 if (normalizedRows.length === 0) {
   console.error(`No schedule rows parsed for ${year}-${month}.`);
+  process.exit(1);
+}
+
+// 안전장치: 파싱된 행이 요청한 달이 아니면(=드롭다운 갱신 실패) 절대 쓰지 않는다.
+// 다른 달 데이터로 파일을 덮어쓰면 gameId·상태가 통째로 오염된다.
+const foreignRows = normalizedRows.filter((r) => r.dateLabel.slice(0, 2) !== month);
+if (foreignRows.length > 0) {
+  console.error(
+    `Requested ${year}-${month} but parsed rows for other months ` +
+      `(예: ${foreignRows[0].dateLabel}) — 월 선택 실패로 보고 쓰기를 중단한다.`,
+  );
   process.exit(1);
 }
 

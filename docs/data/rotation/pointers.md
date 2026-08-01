@@ -1,6 +1,6 @@
 # 팀별 로테이션 포인터
 
-마지막 갱신: 2026-08-01 08:54 KST · generate-starter-forecast.mjs (auto) / 수동 편집 병행
+마지막 갱신: 2026-08-01 22:19 KST · generate-starter-forecast.mjs (auto) / 수동 편집 병행
 
 > 다음 선발 슬롯 포인터. auto=예측 적중 전진, auto-reanchor=아는 로테이션 투수 나와 그 슬롯 기준 재정렬, auto-hold=로테이션 미등록 투수·취소로 유지(사람 확인 필요).
 

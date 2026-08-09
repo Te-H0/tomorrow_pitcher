@@ -33,6 +33,8 @@ jobs:
         if: steps.review.outputs.collected != '0'
         run: node scripts/generate-starter-forecast.mjs
       - name: commit & push
+        # 스크립트가 실패해도 그 전에 저장된 수집분은 커밋한다(md 쓰기는 멱등, 실패 알림은 잡 상태로 유지).
+        if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

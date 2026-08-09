@@ -172,14 +172,24 @@ export function normalizeCancelRows(content) {
   return parseTableRows(content, "사유").filter((r) => looksLikeGameId(r[1]));
 }
 
+// 실제 선발 행에서 원정/홈 선발 중 하나라도 빈 값이면 미확정 행이다.
+// (경기 종료 직후 REVIEW 투수 기록이 아직 없을 때 수집하면 생긴다.)
+export function isBlankActualRow(row) {
+  return !row[3] || !row[5];
+}
+
 // actual 본문 + games 섹션 헤딩에서 이미 기록된 gameId 집합을 만든다.
+// 선발이 빈 값인 행은 "기록됨"으로 치지 않는다 — 다음 수집/백필에서 재시도해 채운다.
 export function recordedIds(existingActual, existingGames) {
+  const actualRows = normalizeActualRows(existingActual);
+  const blank = new Set(actualRows.filter(isBlankActualRow).map((r) => r[1]));
   const end = new Set([
-    ...normalizeActualRows(existingActual).map((r) => r[1]),
+    ...actualRows.map((r) => r[1]),
     ...(existingGames.match(/^##\s+.*\(([^)]+)\)\s*$/gm) ?? [])
       .map((line) => line.match(/\(([^)]+)\)\s*$/)?.[1])
       .filter(Boolean),
   ]);
+  for (const id of blank) end.delete(id);
   const cancel = new Set(normalizeCancelRows(existingActual).map((r) => r[1]));
   return { end, cancel };
 }

@@ -31,6 +31,7 @@ import {
   emptyGamesFile,
   gameSection,
   gotoAndParseReview,
+  isBlankActualRow,
   normalizeActualRows,
   normalizeCancelRows,
   recordedIds,
@@ -74,7 +75,8 @@ const result = await withBrowser(async (page) => {
   const gameSections = [];
   let pendingCount = 0; // 예정·진행중·서스펜디드 (아직 ACTUAL 없음)
   let skipCount = 0; // 이미 기록돼 재접속하지 않은 경기
-  let newEndAttempted = 0; // 미기록 end 경기 REVIEW 시도 수 (DOM 계약 검증용)
+  let newEndAttempted = 0; // 미기록 end 경기 REVIEW 시도 수
+  let blankCount = 0; // end인데 REVIEW 선발이 빈 값 (기록 보류, 다음 회차 재시도)
 
   for (const g of games) {
     const state = gameState(g.cls);
@@ -114,12 +116,23 @@ const result = await withBrowser(async (page) => {
     };
     const review = await gotoAndParseReview(page, game.ymd, game.gameId);
 
-    actualRows.push(actualRow(game, review));
+    // end 직후 REVIEW 투수 기록이 아직 없으면 선발이 빈 값으로 파싱된다.
+    // 빈 값을 기록하면 멱등 스킵에 영구 고착되므로, 기록하지 않고 pending으로 남겨 재시도한다.
+    const row = actualRow(game, review);
+    if (isBlankActualRow(row)) {
+      blankCount += 1;
+      pendingCount += 1;
+      console.log(`${gid}: end 상태지만 REVIEW 선발 미확정(빈 값) — 기록 보류, 재시도 대상.`);
+      await sleep(500);
+      continue;
+    }
+
+    actualRows.push(row);
     gameSections.push(gameSection(game, review));
     await sleep(500);
   }
 
-  return { gamesTotal: games.length, pendingCount, skipCount, newEndAttempted, actualRows, cancelRows, gameSections };
+  return { gamesTotal: games.length, pendingCount, skipCount, newEndAttempted, blankCount, actualRows, cancelRows, gameSections };
 });
 
 if (result.gamesTotal === 0) {
@@ -127,9 +140,16 @@ if (result.gamesTotal === 0) {
   await emitStepOutputs(0, 0);
   process.exit(0);
 }
-if (result.newEndAttempted > 0 && result.actualRows.length === 0) {
-  console.error(`Attempted ${result.newEndAttempted} finished games but parsed 0 actual starters — DOM 계약 의심.`);
-  process.exit(1);
+// 당일 저녁 회차에서 선발이 빈 값이면 "REVIEW 아직 미게시"가 정상 케이스라 pending으로 넘긴다.
+// 익일 백필(yesterday)에서도 빈 값이면 그때는 DOM 계약 변경을 의심해야 한다 → 실패로 알림.
+// 단, 수집된 정상 건은 먼저 저장하고 나서 실패해야 하므로 각 종료 지점에서 호출한다.
+function failIfBlankOnBackfill() {
+  if (rawArg === "yesterday" && result.blankCount > 0) {
+    console.error(
+      `익일 백필인데 ${result.blankCount}건의 end 경기 REVIEW 선발이 빈 값 — DOM 계약 변경 의심.`,
+    );
+    process.exit(1);
+  }
 }
 
 const newCollected = result.actualRows.length + result.cancelRows.length;
@@ -146,6 +166,7 @@ if (newCollected === 0) {
   } else {
     console.log(`신규 없음 · 잔여 ${result.pendingCount}건은 다음 회차/익일 백필 대상 — 정상 종료.`);
   }
+  failIfBlankOnBackfill();
   process.exit(0);
 }
 
@@ -166,3 +187,4 @@ await writeFileEnsured(gamesPath, gamesContent);
 console.log(
   `Wrote ${actualPath} + ${gamesPath} (신규 수집 ${result.actualRows.length} · 신규 취소 ${result.cancelRows.length}).`,
 );
+failIfBlankOnBackfill();

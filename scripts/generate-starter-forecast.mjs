@@ -1,8 +1,13 @@
 // 시스템 예상 선발 생성 → docs/data/starters/predicted/YYYY-MM.md + rotation/pointers.md 갱신
 // 입력: rotation/slots.md + rotation/pointers.md + schedule + official + actual
-// 로직: 어제 실제 선발로 포인터 자동 전진/재정렬, 오늘~D+N 예상 선발 산출(포인터 슬롯 투수).
+// 로직:
+//   1) 어제 실제 선발로 포인터 자동 전진/재정렬. 취소 경기는 예고 투수가 있으면 그 슬롯 유지(재정렬).
+//   2) 오늘~D+N 예상 선발 산출 — 포인터에서 출발해 날짜 순서로 시뮬레이션 전진.
+//      예고가 뜬 경기는 예고 투수 슬롯 기준으로 전진(예고 = 하루 빠른 정답지, 관측상 실제와 100% 일치).
+//   3) 취소 확정 경기의 비교 컬럼을 "취소"로 보정(적중률 집계 제외, 예측 값은 보존).
 // 예측 동결(Model B): 공식 예고가 뜨기 전까지는 현재 포인터로 갱신(재정렬 반영),
 // 공식 예고 확인 시점에 동결. 동결 후에는 수정하지 않으며 "비교" 컬럼으로 적중을 기록한다.
+import { readdir } from "node:fs/promises";
 import {
   DATA_DIR,
   dateLabelFromYmd,
@@ -140,22 +145,54 @@ if (!slotsContent.trim() || !pointersContent.trim()) {
 const slots = parseSlots(slotsContent);
 const pointers = parsePointers(pointersContent);
 
+// 필요한 월의 schedule/official/취소 확정 gameId 로드(캐시)
+const scheduleCache = new Map();
+const officialCache = new Map();
+const cancelCache = new Map(); // month → Set<gameId> (actual 파일의 취소/노게임 섹션)
+async function scheduleRows(month) {
+  if (!scheduleCache.has(month)) {
+    scheduleCache.set(month, parseTableRows(await readFileOrEmpty(`${DATA_DIR}/schedule/${month}.md`), "gameId"));
+  }
+  return scheduleCache.get(month);
+}
+async function officialRows(month) {
+  if (!officialCache.has(month)) {
+    officialCache.set(month, parseTableRows(await readFileOrEmpty(`${DATA_DIR}/starters/official/${month}.md`), "원정 예고선발"));
+  }
+  return officialCache.get(month);
+}
+async function canceledIds(month) {
+  if (!cancelCache.has(month)) {
+    const rows = parseTableRows(await readFileOrEmpty(`${DATA_DIR}/starters/actual/${month}.md`), "사유");
+    cancelCache.set(month, new Set(rows.map((r) => r[1]).filter(Boolean)));
+  }
+  return cancelCache.get(month);
+}
+
+function officialStarter(offRows, gameId, team) {
+  const row = offRows.find((r) => r[1] === gameId);
+  if (!row) return "";
+  if (row[2] === team) return row[3];
+  if (row[5] === team) return row[6];
+  return "";
+}
+
 // 어제 실제 선발: actual/{yesterday month}.md
 const yActual = await readFileOrEmpty(`${DATA_DIR}/starters/actual/${monthOf(yesterday)}.md`);
 const yActualRows = parseTableRows(yActual, "원정 선발").filter((r) => r[1].startsWith(yesterday));
 const yCancelRows = parseTableRows(yActual, "사유").filter((r) => r[1].startsWith(yesterday));
 
-// 팀별 어제 실제 선발 { team: {gameId, starter} }
+// 팀별 어제 실제 선발 { team: {gameId, starter} } / 어제 취소 경기 gameId
 const yStarterByTeam = new Map();
 for (const r of yActualRows) {
   // [날짜, gameId, 원정, 원정선발, 홈, 홈선발, 구장, 상태]
   yStarterByTeam.set(r[2], { gameId: r[1], starter: r[3] });
   yStarterByTeam.set(r[4], { gameId: r[1], starter: r[5] });
 }
-const yCancelTeams = new Set();
+const yCancelByTeam = new Map();
 for (const r of yCancelRows) {
-  yCancelTeams.add(r[2]);
-  yCancelTeams.add(r[3]);
+  yCancelByTeam.set(r[2], r[1]);
+  yCancelByTeam.set(r[3], r[1]);
 }
 
 // --- 1) 포인터 자동 전진 ---------------------------------------------------
@@ -192,10 +229,26 @@ for (const [team, ptr] of pointers) {
       ptr.updatedBy = "auto-hold";
       ptr.memo = `확인 필요: ${y.starter || "-"} 로테이션 미등록 선발`;
     }
-  } else if (yCancelTeams.has(team)) {
-    ptr.updatedAt = stamp;
-    ptr.updatedBy = "auto-hold";
-    ptr.memo = "확인 필요: 어제 경기 취소";
+  } else if (yCancelByTeam.has(team)) {
+    const cancelGameId = yCancelByTeam.get(team);
+    if (ptr.lastGame === cancelGameId) continue; // 이미 반영됨(멱등)
+    // 예고까지 났던 경기가 취소되면 그 투수는 등판하지 않았다 → 여전히 다음 차례.
+    // 예고 투수가 로테이션에 있으면 그 슬롯으로 재정렬해 취소 정보를 잃지 않는다.
+    const offP = officialStarter(await officialRows(monthOf(yesterday)), cancelGameId, team);
+    const offSlot = findSlotByPitcher(slotList, offP);
+    if (offSlot != null) {
+      ptr.nextSlot = offSlot;
+      ptr.lastGame = cancelGameId;
+      ptr.updatedAt = stamp;
+      ptr.updatedBy = "auto-reanchor";
+      ptr.memo = `취소 경기 예고 ${offP}(슬롯 ${offSlot}) 유지 — 다음 차례로 재정렬`;
+    } else if (ptr.updatedBy !== "manual") {
+      // 예고 없는 취소는 새 정보가 없다 — 수동 시드는 보존하고 자동 상태만 확인 필요로 표시.
+      ptr.lastGame = cancelGameId; // 같은 취소를 재처리하지 않도록 멱등 가드
+      ptr.updatedAt = stamp;
+      ptr.updatedBy = "auto-hold";
+      ptr.memo = "확인 필요: 어제 경기 취소";
+    }
   }
 }
 
@@ -206,7 +259,7 @@ function renderPointers(map) {
     "",
     `마지막 갱신: ${stamp} · generate-starter-forecast.mjs (auto) / 수동 편집 병행`,
     "",
-    "> 다음 선발 슬롯 포인터. auto=예측 적중 전진, auto-reanchor=아는 로테이션 투수 나와 그 슬롯 기준 재정렬, auto-hold=로테이션 미등록 투수·취소로 유지(사람 확인 필요).",
+    "> 다음 선발 슬롯 포인터. auto=예측 적중 전진, auto-reanchor=아는 로테이션 투수(실제 또는 취소 경기 예고) 기준 재정렬, auto-hold=로테이션 미등록 투수·예고 없는 취소로 유지(사람 확인 필요).",
     "",
     "| 팀 | 다음 슬롯 | 마지막 반영 경기 | 갱신 시각(KST) | 갱신 주체 | 메모 |",
     "|---|---|---|---|---|---|",
@@ -219,29 +272,12 @@ function renderPointers(map) {
 await writeFileEnsured(`${DATA_DIR}/rotation/pointers.md`, renderPointers(pointers));
 
 // --- 2) 오늘~D+N 예상 선발 -------------------------------------------------
-// 필요한 월의 schedule/official 로드(캐시)
-const scheduleCache = new Map();
-const officialCache = new Map();
-async function scheduleRows(month) {
-  if (!scheduleCache.has(month)) {
-    scheduleCache.set(month, parseTableRows(await readFileOrEmpty(`${DATA_DIR}/schedule/${month}.md`), "gameId"));
-  }
-  return scheduleCache.get(month);
-}
-async function officialRows(month) {
-  if (!officialCache.has(month)) {
-    officialCache.set(month, parseTableRows(await readFileOrEmpty(`${DATA_DIR}/starters/official/${month}.md`), "원정 예고선발"));
-  }
-  return officialCache.get(month);
-}
-
-function officialStarter(offRows, gameId, team) {
-  const row = offRows.find((r) => r[1] === gameId);
-  if (!row) return "";
-  if (row[2] === team) return row[3];
-  if (row[5] === team) return row[6];
-  return "";
-}
+// 팀별 작업 슬롯: 포인터에서 출발해 날짜 순서로 시뮬레이션 전진한다.
+// - 예고가 뜬 경기: 예고 투수 슬롯 기준으로 전진(예고 = 하루 빠른 정답지). 모르는 투수면 유지.
+// - 취소 확정 경기: 예고 투수가 여전히 다음 차례 → 그 슬롯으로 이동(전진 없음).
+// - 그 외 미래 경기: 예측 슬롯이 맞았다고 가정하고 전진(로테이션 순환 가정).
+const curSlotByTeam = new Map();
+for (const [team, ptr] of pointers) curSlotByTeam.set(team, ptr.nextSlot);
 
 // 대상 날짜별 예측 행 산출
 const predictedByMonth = new Map(); // month → rows[]
@@ -249,9 +285,9 @@ for (let off = 0; off <= horizon; off += 1) {
   const ymd = kstYmdOffset(off);
   const month = monthOf(ymd);
   const dateLabel = dateLabelFromYmd(ymd);
-  const schedMonth = ymd.slice(0, 4) + "-" + ymd.slice(4, 6);
-  const rows = await scheduleRows(schedMonth);
+  const rows = await scheduleRows(month);
   const offRows = await officialRows(month);
+  const canceledSet = await canceledIds(month);
   for (const r of rows) {
     // schedule row: [날짜, 시간, 원정, 홈, 구장, 상태, gameId]
     if (!r[0] || !r[0].startsWith(`${ymd.slice(4, 6)}.${ymd.slice(6, 8)}`)) continue;
@@ -265,14 +301,25 @@ for (let off = 0; off <= horizon; off += 1) {
       if (!ptr) continue;
       // 포인터가 부상 이탈(INACTIVE)·미정(PENDING) 슬롯을 가리키면 다음 유효 슬롯으로 건너뛴다.
       // 유효 슬롯이 하나도 없는 팀은 예측을 생략한다(에러 아님).
-      const slotNo = resolveForecastSlot(slotList, ptr.nextSlot);
+      const slotNo = resolveForecastSlot(slotList, curSlotByTeam.get(team) ?? ptr.nextSlot);
+      const off2 = officialStarter(offRows, gameId, team);
+      const offSlot = findSlotByPitcher(slotList, off2);
+      const canceled = canceledSet.has(gameId);
+      // 다음 경기일용 슬롯 전진 (예측 기록 여부와 무관하게 정보는 반영한다)
+      if (canceled) {
+        // 취소 경기는 투수가 등판하지 않았으므로 전진하지 않는다(연속 취소 시 슬롯 유지는 의도된 동작).
+        if (offSlot != null) curSlotByTeam.set(team, offSlot);
+      } else if (off2) {
+        if (offSlot != null) curSlotByTeam.set(team, nextSlotNumber(slotList, offSlot));
+      } else if (slotNo != null) {
+        curSlotByTeam.set(team, nextSlotNumber(slotList, slotNo));
+      }
       if (slotNo == null) continue;
       const predicted = pitcherAt(slotList, slotNo);
       if (!predicted) continue;
-      const off2 = officialStarter(offRows, gameId, team);
       if (!predictedByMonth.has(month)) predictedByMonth.set(month, []);
       predictedByMonth.get(month).push({
-        dateLabel, gameId, team, predicted, slotNo, official: off2,
+        dateLabel, gameId, team, predicted, slotNo, official: off2, canceled,
       });
     }
   }
@@ -286,7 +333,7 @@ function renderPredicted(month, rows) {
     "",
     `마지막 갱신: ${stamp} · generate-starter-forecast.mjs`,
     "",
-    "> 로테이션 포인터 기반 예상 선발(SYSTEM_PREDICTED, 최하위 신뢰). 공식 예고 전까지 갱신되고 예고 확인 시 동결, 비교 컬럼으로 적중을 검증한다.",
+    "> 로테이션 포인터 기반 예상 선발(SYSTEM_PREDICTED, 최하위 신뢰). 공식 예고 전까지 갱신되고 예고 확인 시 동결, 비교 컬럼으로 적중을 검증한다. 취소 확정 경기는 비교=취소로 집계에서 제외.",
     "",
     "| 날짜 | gameId | 팀 | 예상 선발 | 근거 슬롯 | 생성 시각(KST) | 비교 |",
     "|---|---|---|---|---|---|---|",
@@ -295,10 +342,10 @@ function renderPredicted(month, rows) {
   return `${lines.join("\n")}\n`;
 }
 
-// 동결 규칙(Model B): 공식 예고가 확인된 시점(비교=일치/불일치)에 예측을 동결한다.
+// 동결 규칙(Model B): 공식 예고가 확인된 시점(비교=일치/불일치) 또는 취소 확정 시점에 예측을 동결한다.
 // 그 전(비교=예고대기)까지는 현재 포인터 기준으로 계속 갱신 → 포인터 재정렬이 미래 예측에 반영된다.
 // 동결 후에는 포인터가 더 움직여도 그 행을 건드리지 않아 적중률 기록이 보존된다.
-const FROZEN_COMPARE = new Set(["일치", "불일치"]);
+const FROZEN_COMPARE = new Set(["일치", "불일치", "취소"]);
 let totalPred = 0;
 for (const [month, preds] of predictedByMonth) {
   const path = `${DATA_DIR}/starters/predicted/${month}.md`;
@@ -308,10 +355,14 @@ for (const [month, preds] of predictedByMonth) {
   for (const p of preds) {
     const key = `${p.gameId}|${p.team}`;
     const prev = byKey.get(key);
-    // 이미 공식 예고 시점에 동결된 행은 그대로 둔다.
+    // 이미 동결된 행은 그대로 둔다.
     if (prev && FROZEN_COMPARE.has(prev[6])) continue;
-    // 미동결(예고대기) 또는 신규 → 현재 포인터 예측으로 갱신. 공식 예고가 있으면 이 값으로 동결.
-    const compare = p.official ? (p.official === p.predicted ? "일치" : "불일치") : "예고대기";
+    // 미동결(예고대기) 또는 신규 → 현재 포인터 예측으로 갱신. 취소/공식 예고가 있으면 이 값으로 동결.
+    const compare = p.canceled
+      ? "취소"
+      : p.official
+        ? (p.official === p.predicted ? "일치" : "불일치")
+        : "예고대기";
     // 예측 값이 그대로면 생성 시각 유지(불필요한 diff 방지), 바뀌면 갱신.
     const genAt = prev && prev[3] === p.predicted ? prev[5] : stamp;
     byKey.set(key, [p.dateLabel, p.gameId, p.team, p.predicted, `슬롯 ${p.slotNo}`, genAt, compare]);
@@ -321,6 +372,32 @@ for (const [month, preds] of predictedByMonth) {
   totalPred += preds.length;
   console.log(`predicted/${month}.md: ${preds.length} team-forecasts upsert (total rows ${rows.length}).`);
 }
+
+// --- 3) 취소 보정 -----------------------------------------------------------
+// 이미 동결(일치/불일치)됐거나 예고대기로 남은 행이라도 경기가 취소로 확정되면
+// 비교를 "취소"로 바꿔 적중률 집계에서 제외한다. 예측 값 자체는 보존한다.
+// 예측 윈도우 밖의 과거 월 파일도 함께 보정한다(멱등).
+const predDir = `${DATA_DIR}/starters/predicted`;
+let cancelFixed = 0;
+for (const file of (await readdir(predDir).catch(() => [])).sort()) {
+  const m = file.match(/^(\d{4}-\d{2})\.md$/);
+  if (!m) continue;
+  const month = m[1];
+  const canceledSet = await canceledIds(month);
+  if (canceledSet.size === 0) continue;
+  const path = `${predDir}/${file}`;
+  const rows = parseTableRows(await readFileOrEmpty(path), PRED_SIG);
+  let changed = false;
+  for (const r of rows) {
+    if (canceledSet.has(r[1]) && r[6] !== "취소") {
+      r[6] = "취소";
+      changed = true;
+      cancelFixed += 1;
+    }
+  }
+  if (changed) await writeFileEnsured(path, renderPredicted(month, rows));
+}
+if (cancelFixed > 0) console.log(`취소 보정: ${cancelFixed}행의 비교를 "취소"로 변경.`);
 
 if (totalPred === 0) {
   console.error(`No forecasts produced (오늘~D+${horizon} 일정 없음 또는 슬롯 미구성).`);

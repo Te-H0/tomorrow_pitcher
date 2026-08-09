@@ -33,6 +33,7 @@ import {
   emptyGamesFile,
   gameSection,
   gotoAndParseReview,
+  isBlankActualRow,
   normalizeActualRows,
   normalizeCancelRows,
   recordedIds,
@@ -161,12 +162,14 @@ await withBrowser(async (page) => {
       const tag = `[${month}] ${i + 1}/${total} ${game.dateLabel} ${game.awayName}@${game.homeName} ${game.gameId}`;
       try {
         const review = await gotoAndParseReview(page, game.ymd, game.gameId);
-        // REVIEW가 비어 있으면(투수 기록 0행) 데이터 없는 경기로 보고 실패 처리 후 계속.
-        if (review.awayPitchers.length === 0 && review.homePitchers.length === 0) {
-          failures.push({ gameId: game.gameId, ymd: game.ymd, reason: "투수 기록 0행(REVIEW 미제공)" });
-          console.log(`${tag} — 실패(투수 기록 없음), 계속 진행`);
+        // 선발이 한쪽이라도 빈 값이면(REVIEW 미제공·미게시) 기록하지 않고 실패 처리 후 계속.
+        // 빈 값을 기록하면 멱등 스킵에 영구 고착되므로 재실행 때 다시 시도하게 남겨둔다.
+        const row = actualRow(game, review);
+        if (isBlankActualRow(row)) {
+          failures.push({ gameId: game.gameId, ymd: game.ymd, reason: "REVIEW 선발 미확정(빈 값)" });
+          console.log(`${tag} — 실패(선발 빈 값), 계속 진행`);
         } else {
-          actualRows.push(actualRow(game, review));
+          actualRows.push(row);
           gameSections.push(gameSection(game, review));
           console.log(`${tag} — OK`);
         }

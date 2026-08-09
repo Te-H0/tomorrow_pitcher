@@ -14,7 +14,7 @@ DB/서버 없이 GitHub Actions가 KBO 공개 페이지를 수집해 이 폴더�
 | 월별 일정+상태 | `schedule/YYYY-MM.md` | `Schedule.aspx` | sync-daily 08:00 | 진행 중 당일 경기는 상태 "미정"·gameId 빈값(한계). |
 | 공식 예고 선발 | `starters/official/YYYY-MM.md` | GameCenter 날짜 페이지 `li.game-cont`(start_ck=1) | sync-preview 09/12/15/18/21/23 | gameId당 1행. 하단 `## 변경 이력`에 예고 교체 기록. |
 | 실제 선발 | `starters/actual/YYYY-MM.md` | GameCenter REVIEW(등판=선발) | sync-postgame 21:30~24:30 + sync-daily 08:00(익일 백필) | ACTUAL(최상위 신뢰). 취소 경기는 `## 취소/노게임`에만 기록. 미기록 end 경기만 REVIEW 접속. |
-| 시스템 예상 선발 | `starters/predicted/YYYY-MM.md` | rotation/* + schedule + official | sync-postgame(신규 있을 때) + sync-daily 아침 1회 | 생성물. 예측은 사후 수정 없음, 비교 컬럼으로만 검증. |
+| 시스템 예상 선발 | `starters/predicted/YYYY-MM.md` | rotation/* + schedule + official + actual(취소) | sync-postgame(신규 있을 때) + sync-daily 아침 1회 | 생성물. 예측은 사후 수정 없음, 비교 컬럼(일치/불일치/예고대기/취소)으로만 검증. |
 | 경기 결과 상세 | `games/YYYY-MM.md` | GameCenter REVIEW | sync-postgame + sync-daily 08:00(익일 백필) | 스코어보드 + 투수 전원 + 타자 기록. 경기당 1섹션. |
 | 일자별 순위 | `standings/YYYY-MM.md` | `TeamRankDaily.aspx` | sync-daily + sync-postgame | 순위표 + 팀간 승패표. 날짜당 1섹션. |
 | 일자별 등록/말소 | `availability/YYYY-MM.md` | `Register.aspx`(팀 10곳) | sync-daily 08:00 + sync-preview 15:00 | 전 팀 변동 없으면 "변동 없음". |
@@ -35,8 +35,8 @@ DB/서버 없이 GitHub Actions가 KBO 공개 페이지를 수집해 이 폴더�
   최신 아니면 `node scripts/generate-starter-forecast.mjs` 후 답변.
 - **"예고 선발 떴어?"** → `starters/official/YYYY-MM.md` 확인.
   오래됐으면 `node scripts/extract-kbo-preview.mjs` (오늘+내일).
-- **"예측 잘 맞았어?"** → `predicted`의 **비교** 컬럼(일치/불일치/예고대기)을 본다.
-  실제 대조는 같은 gameId를 `starters/actual`에서 찾아 예상 선발 vs 실제 선발 비교. 예측은 사후 수정하지 않으므로 생성 시각이 곧 예측 시점이다.
+- **"예측 잘 맞았어?"** → `predicted`의 **비교** 컬럼(일치/불일치/예고대기/취소)을 본다.
+  `취소`는 경기 취소 확정 행으로 적중률 집계에서 제외한다. 실제 대조는 같은 gameId를 `starters/actual`에서 찾아 예상 선발 vs 실제 선발 비교(관측상 예고=실제 100%라 예고 대조로 충분). 예측은 사후 수정하지 않으므로 생성 시각이 곧 예측 시점이다.
 - **"순위 알려줘"** → `standings/YYYY-MM.md` 최신 날짜 섹션.
   오래됐으면 `node scripts/extract-kbo-standings.mjs`.
 - **"오늘 등록/말소 있어?"** → `availability/YYYY-MM.md` 해당 날짜 섹션.

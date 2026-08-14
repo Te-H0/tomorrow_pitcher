@@ -18,8 +18,9 @@ DB/서버 없이 GitHub Actions가 KBO 공개 페이지를 수집해 이 폴더�
 | 경기 결과 상세 | `games/YYYY-MM.md` | GameCenter REVIEW | sync-postgame + sync-daily 08:00(익일 백필) | 스코어보드 + 투수 전원 + 타자 기록. 경기당 1섹션. |
 | 일자별 순위 | `standings/YYYY-MM.md` | `TeamRankDaily.aspx` | sync-daily + sync-postgame | 순위표 + 팀간 승패표. 날짜당 1섹션. |
 | 일자별 등록/말소 | `availability/YYYY-MM.md` | `Register.aspx`(팀 10곳) | sync-daily 08:00 + sync-preview 15:00 | 전 팀 변동 없으면 "변동 없음". |
-| 로테이션 슬롯 | `rotation/slots.md` | 수동(사람/AI) | 수시 | 팀별 선발 순서. 뉴스 보고 편집. |
-| 로테이션 포인터 | `rotation/pointers.md` | 수동 + forecast 자동 | sync-postgame | 팀별 다음 선발 슬롯. auto/auto-hold/seed 주체 표기. |
+| 로테이션 슬롯 | `rotation/slots.md` | forecast 자동 파생 | forecast 실행 시 | 관측(실제+예고+등록/말소) 파생 스냅샷. 슬롯 1=다음 차례. **편집 금지**. |
+| 다음 선발 현황 | `rotation/pointers.md` | forecast 자동 파생 | forecast 실행 시 | 팀별 다음 예상 투수·휴식일 요약. **편집 금지**. |
+| 로테이션 보정 | `rotation/overrides.md` | 수동(사람/AI) | 수시 | 사람 판단 단일 진입점(제외/포함). 해소되면 행 삭제. |
 | 과거 실험 문서 | `archive/*.md` | (보존) | — | 재편 전 forecast/rotation 실험 기록. |
 
 ## 2. 요청 → 대응 플레이북
@@ -43,9 +44,9 @@ DB/서버 없이 GitHub Actions가 KBO 공개 페이지를 수집해 이 폴더�
   오래됐으면 `node scripts/extract-kbo-availability.mjs`.
 - **"경기 결과 상세(스코어/투수/타자) 줘"** → `games/YYYY-MM.md`의 해당 경기 섹션.
   없으면 `node scripts/extract-kbo-review.mjs YYYYMMDD`.
-- **"로테이션 바꿔줘 / 포인터 수정해줘"** →
-  - 순서/부상 반영: `rotation/slots.md`의 팀 섹션에서 슬롯 행(투수/상태/메모) 편집.
-  - 다음 차례 수정: `rotation/pointers.md`에서 해당 팀 `다음 슬롯` 변경, `갱신 주체`를 `manual`, `메모`에 사유 기입.
+- **"로테이션 바꿔줘 / 이 투수 빼줘·넣어줘"** →
+  - `rotation/slots.md`·`pointers.md`는 관측에서 **자동 파생되는 아티팩트**라 직접 편집하지 않는다(2026-08-14 결정).
+  - 사람 보정은 `rotation/overrides.md`에만 행 추가: `| 팀 | 투수 | 처리(제외/포함) | 기준일 | 메모 |`.
   - 편집 후 `node scripts/generate-starter-forecast.mjs`로 예측 재생성.
 
 ## 3. 수동 실행 명령어 전체

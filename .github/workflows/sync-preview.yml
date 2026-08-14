@@ -1,15 +1,17 @@
 name: sync-preview
 
 # 공식 예고 선발 반복 수집. KST 09,12,15,18,21,23시.
-# 15시(UTC 06) 회차에는 등록/말소도 함께 수집.
+# 등록/말소는 15시(UTC 06) 회차에 함께 수집하되, 경기 없는 월요일은 접수 마감이 16:30이라 18시(UTC 09) 회차로 미룬다.
 on:
   schedule:
-    - cron: "0 0,3,9,12,14 * * *" # KST 09,12,18,21,23 — preview만
-    - cron: "0 6 * * *"           # KST 15 — preview + availability
+    - cron: "0 0,3,12,14 * * *" # KST 09,12,21,23 — preview만
+    - cron: "0 6 * * *"         # KST 15 — preview + availability(월요일 제외)
+    - cron: "0 9 * * *"         # KST 18 — preview + availability(월요일만)
   workflow_dispatch:
 
 permissions:
   contents: write
+  issues: write
 
 concurrency:
   group: data-sync
@@ -27,8 +29,14 @@ jobs:
       - run: npx playwright install chromium --with-deps
       - name: 예고 선발 (오늘+내일)
         run: node scripts/extract-kbo-preview.mjs
-      - name: 등록/말소 (15시 회차 전용)
-        if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 6 * * *'
+      - name: KST 요일 계산
+        id: kst
+        run: echo "dow=$(TZ=Asia/Seoul date +%u)" >> "$GITHUB_OUTPUT" # 1=월
+      - name: 등록/말소 (평시 15시, 월요일은 18시 회차)
+        if: >-
+          github.event_name == 'workflow_dispatch' ||
+          (github.event.schedule == '0 6 * * *' && steps.kst.outputs.dow != '1') ||
+          (github.event.schedule == '0 9 * * *' && steps.kst.outputs.dow == '1')
         run: node scripts/extract-kbo-availability.mjs
       - name: commit & push
         # 스크립트가 실패해도 그 전에 저장된 수집분은 커밋한다(md 쓰기는 멱등, 실패 알림은 잡 상태로 유지).
@@ -38,3 +46,18 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add docs/data
           git diff --cached --quiet || (git commit -m "data: sync-preview 예고 선발 갱신" && git pull --rebase && git push)
+      - name: 실패 알림 이슈
+        # 실패를 Actions 탭 밖으로 알린다. 같은 제목의 열린 이슈가 있으면 코멘트만 추가(중복 방지).
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          TITLE="[sync-preview 실패] 수집 파이프라인 점검 필요"
+          BODY="실패 런: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          NUM=$(gh issue list --state open --search "in:title \"$TITLE\"" --json number --jq '.[0].number // empty' || true)
+          if [ -n "$NUM" ]; then
+            gh issue comment "$NUM" --body "$BODY"
+          else
+            gh issue create --title "$TITLE" --body "$BODY"
+          fi

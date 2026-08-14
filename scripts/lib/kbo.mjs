@@ -70,6 +70,34 @@ export function kstStamp(date = new Date()) {
   return `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute} KST`;
 }
 
+// 임의의 YYYYMMDD 기준 offsetDays 이동 (한국은 DST 없음)
+export function ymdOffset(ymd, offsetDays) {
+  const base = Date.UTC(Number(ymd.slice(0, 4)), Number(ymd.slice(4, 6)) - 1, Number(ymd.slice(6, 8)));
+  const d = new Date(base + offsetDays * 86400000);
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  return `${d.getUTCFullYear()}${m}${day}`;
+}
+
+// 두 YMD 사이 일수 (b - a)
+export function daysBetween(a, b) {
+  const t = (s) => Date.UTC(Number(s.slice(0, 4)), Number(s.slice(4, 6)) - 1, Number(s.slice(6, 8)));
+  return Math.round((t(b) - t(a)) / 86400000);
+}
+
+// fromYmd~toYmd 구간이 걸치는 "YYYY-MM" 목록
+export function monthsCovering(fromYmd, toYmd) {
+  const set = new Set();
+  for (let d = fromYmd; d <= toYmd; d = ymdOffset(d, 1)) set.add(monthOf(d));
+  return [...set];
+}
+
+// md 테이블의 "MM.DD(요일)" 셀 + "YYYY-MM" → "YYYYMMDD"
+export function ymdFromDateCell(dateCell, month) {
+  const m = dateCell.match(/^(\d\d)\.(\d\d)/);
+  return m ? `${month.slice(0, 4)}${m[1]}${m[2]}` : "";
+}
+
 // "20260719" → "2026-07"
 export function monthOf(ymd) {
   return `${ymd.slice(0, 4)}-${ymd.slice(4, 6)}`;

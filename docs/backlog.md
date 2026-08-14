@@ -63,6 +63,8 @@ This file tracks open questions, pending decisions, and next tasks that should n
 
 ## Later
 
+- [ ] **뉴스 claims 파이프라인 (AI 추출)**: 취소/재편 트리거 + 매일 저녁 1회 네이버 뉴스 검색 API로 팀별 선발 관련 기사 수집 → LLM(Claude, Haiku급)으로 `(날짜, 팀, 투수, 확실성[명시/추정], 근거 문장, 출처, 발행시각)` claim 구조화 추출(명시된 것만·상대 날짜는 발행시각 기준 KST 절대화·claim 단위 디덥) → `starters/news-claims/YYYY-MM.md`(신뢰순위 NEWS_REPORTED, OFFICIAL과 SYSTEM 사이) 자동 기록. 예측과 불일치하는 `명시` claim만 확인 큐(GitHub 이슈)로 올리고, 운영자 승인 시 `rotation/overrides.md` 반영. 자동 예측 반영은 금지(MVP 정책 유지) — claims의 실측 적중률이 쌓인 뒤(예: 명시 등급 90%+) 자동 반영 격상을 별도 결정. 배경: 감독이 취소 직후 브리핑에서 D+1~3 로테이션 계획을 통째로 공개하는 관행 확인(예: 8/4 스포츠경향 KIA 기사) — 모델이 구조적으로 못 푸는 재개 첫날·임시 선발 구간의 유일한 정답 소스.
+
 - [ ] Revisit player photos only after official permission or a paid license is available; model provider, source, scope, attribution, expiration, and removal status.
 - [ ] Revisit hitter tables only when hitter/lineup features become real product scope.
 - [ ] Revisit a generic `players` table only when cross-player features justify it.

@@ -1,6 +1,6 @@
 # 팀별 다음 선발 현황 (자동 파생)
 
-마지막 갱신: 2026-08-14 12:50 KST · generate-starter-forecast.mjs (관측 파생 — 편집하지 마세요)
+마지막 갱신: 2026-08-14 23:33 KST · generate-starter-forecast.mjs (관측 파생 — 편집하지 마세요)
 
 > 슬롯 순서는 관측에서 매 실행 파생되므로 별도 포인터 상태가 없다. 보정은 rotation/overrides.md에서.
 
@@ -9,7 +9,7 @@
 | 두산 | 잭로그 | 07.31 | 14일 | ACTIVE |
 | 롯데 | 김진욱 | 07.31 | 14일 | ACTIVE |
 | 삼성 | 최원태 | 07.28 | 17일 | TEMPORARY |
-| 키움 | 박준현 | 07.31 | 14일 | ACTIVE |
+| 키움 | 김윤하 | 08.01 | 13일 | ACTIVE |
 | 한화 | 짐머맨 | 08.01 | 13일 | ACTIVE |
 | KIA | 황동하 | 07.26 | 19일 | TEMPORARY |
 | KT | 배제성 | 08.01 | 13일 | TEMPORARY |

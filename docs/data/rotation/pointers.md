@@ -1,18 +1,18 @@
 # 팀별 다음 선발 현황 (자동 파생)
 
-마지막 갱신: 2026-08-19 08:13 KST · generate-starter-forecast.mjs (관측 파생 — 편집하지 마세요)
+마지막 갱신: 2026-08-19 22:43 KST · generate-starter-forecast.mjs (관측 파생 — 편집하지 마세요)
 
 > 슬롯 순서는 관측에서 매 실행 파생되므로 별도 포인터 상태가 없다. 보정은 rotation/overrides.md에서.
 
 | 팀 | 다음 예상 | 마지막 등판 | 휴식일(오늘 기준) | 상태 |
 |---|---|---|---|---|
-| 두산 | 최민석 | 08.13 | 6일 | ACTIVE |
+| 두산 | 잭로그 | 08.14 | 5일 | ACTIVE |
 | 롯데 | 김한결 | 08.12 | 7일 | TEMPORARY |
-| 삼성 | 보스 | 08.12 | 7일 | ACTIVE |
-| 키움 | 알칸타라 | 08.13 | 6일 | TEMPORARY |
-| 한화 | 화이트 | 08.12 | 7일 | ACTIVE |
-| KIA | 시라카와 | 08.13 | 6일 | TEMPORARY |
-| KT | 대니엘 | 08.13 | 6일 | TEMPORARY |
-| LG | 톨허스트 | 08.13 | 6일 | ACTIVE |
+| 삼성 | 원태인 | 08.13 | 6일 | ACTIVE |
+| 키움 | 박준현 | 08.14 | 5일 | ACTIVE |
+| 한화 | 류현진 | 08.13 | 6일 | ACTIVE |
+| KIA | 황동하 | 08.14 | 5일 | TEMPORARY |
+| KT | 고영표 | 08.14 | 5일 | ACTIVE |
+| LG | 송승기 | 08.14 | 5일 | ACTIVE |
 | NC | 구창모 | 08.12 | 7일 | ACTIVE |
-| SSG | 타케다 | 08.13 | 6일 | ACTIVE |
+| SSG | 최민준 | 08.14 | 5일 | TEMPORARY |

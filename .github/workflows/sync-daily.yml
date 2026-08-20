@@ -17,6 +17,9 @@ concurrency:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    # 기본 6시간 방치를 막는다. playwright 설치가 매달려 6시간 좀비 런이 되면
+    # data-sync 동시성 그룹을 공유하는 다른 수집까지 큐에서 함께 막힌다(2026-08-18 실측).
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -24,6 +27,7 @@ jobs:
           node-version: "22"
       - run: npm ci
       - run: npx playwright install chromium --with-deps
+        timeout-minutes: 10
       - name: 당월 일정
         run: node scripts/extract-kbo-schedule.mjs
       - name: 어제 잔여 경기 백필
@@ -36,6 +40,10 @@ jobs:
         run: node scripts/extract-kbo-standings.mjs
       - name: 등록/말소 보정
         run: node scripts/extract-kbo-availability.mjs
+      - name: 예고 수집 헬스체크 (어제)
+        # preview는 예고 0건을 정상으로 넘긴다(경기 없는 날/발표 전 회차가 매일 섞임).
+        # 그 사각지대를 사후 검증으로 막는다: 어제 '종료'된 경기에 공식 예고가 없으면 수집이 깨진 것.
+        run: node scripts/check-preview-health.mjs
       - name: commit & push
         # 스크립트가 실패해도 그 전에 저장된 수집분은 커밋한다(md 쓰기는 멱등, 실패 알림은 잡 상태로 유지).
         if: always()
@@ -44,6 +52,19 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add docs/data
           git diff --cached --quiet || (git commit -m "data: sync-daily 일정/순위/등록말소 갱신" && git pull --rebase && git push)
+      - name: 복구 시 실패 이슈 닫기
+        # 열린 이슈 = "지금 고장 중"을 유지한다. 안 닫으면 한 번 뜬 이슈가 계속 남아
+        # 알림이 신호 역할을 못 한다(2026-08 이슈 #1 사례).
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          TITLE="[sync-daily 실패] 수집 파이프라인 점검 필요"
+          NUM=$(gh issue list --state open --search "in:title \"$TITLE\"" --json number --jq '.[0].number // empty' || true)
+          if [ -n "$NUM" ]; then
+            gh issue close "$NUM" --comment "복구 확인: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          fi
       - name: 실패 알림 이슈
         # 실패를 Actions 탭 밖으로 알린다. 같은 제목의 열린 이슈가 있으면 코멘트만 추가(중복 방지).
         if: failure()

@@ -33,6 +33,15 @@ function targetDates() {
   return [kstToday(), kstYmdOffset(1)];
 }
 
+// 대상 날짜에 경기가 편성돼 있었는지(취소 포함) 일정 데이터로 확인한다.
+// 일정 파일이 아직 없으면(월 경계 등) 판단 불가이므로 null.
+async function scheduledGameCount(ymd) {
+  const content = await readFileOrEmpty(`${DATA_DIR}/schedule/${monthOf(ymd)}.md`);
+  if (!content) return null;
+  const label = dateLabelFromYmd(ymd);
+  return parseTableRows(content, "구장").filter((r) => r[0] === label).length;
+}
+
 function renderFile(month, rows, logRows) {
   const header = [
     `# ${month} KBO 공식 예고 선발`,
@@ -54,6 +63,7 @@ function renderFile(month, rows, logRows) {
 
 const dates = targetDates();
 let totalGames = 0;
+const seenByDate = new Map(); // ymd → GameCenter에서 읽어낸 경기 수(예고 여부 무관)
 const byMonth = new Map(); // month → { rows: [], log: [] }
 
 await withBrowser(async (page) => {
@@ -62,6 +72,7 @@ await withBrowser(async (page) => {
     await page.waitForTimeout(4000);
     // 과거 날짜 clamp 방어: 요청 날짜와 g_dt가 일치하는 경기만.
     const games = (await readGameConts(page)).filter((g) => g.attrs.g_dt === ymd);
+    seenByDate.set(ymd, games.length);
     const stamp = kstStamp();
 
     for (const g of games) {
@@ -120,12 +131,25 @@ await withBrowser(async (page) => {
 });
 
 if (totalGames === 0) {
-  // 예고 발표 경기가 하나도 없을 수 있다(이른 시간대). 경기 자체가 없는지 판단이 어려우므로
-  // 최소한 대상 날짜에 경기가 존재했는지로 정상/실패를 가른다.
-  console.error(
-    `No announced starters found for ${dates.join(", ")}. (아직 예고 미발표이거나 경기 없음)`,
-  );
-  process.exit(1);
+  // 예고 0건은 대부분 정상이다: 경기 없는 날(월요일/전면취소)이거나 아직 예고 발표 전.
+  // 이걸 실패로 올리면 하루 6회 수집 중 이른 회차가 매번 실패해 알림이 무의미해진다.
+  // 진짜 고장은 "일정상 경기가 편성됐는데 GameCenter에서 한 경기도 못 읽은" 경우로 좁혀서 잡는다.
+  const broken = [];
+  for (const ymd of dates) {
+    if ((seenByDate.get(ymd) ?? 0) > 0) continue; // 경기는 읽었고 예고만 없음 → 정상
+    const scheduled = await scheduledGameCount(ymd);
+    if (scheduled) broken.push(`${ymd}(일정 ${scheduled}경기)`);
+  }
+  if (broken.length > 0) {
+    console.error(
+      `GameCenter에서 경기를 하나도 읽지 못했다: ${broken.join(", ")}. 페이지 구조/로딩 점검 필요.`,
+    );
+    process.exit(1);
+  }
+  const detail = dates
+    .map((ymd) => `${ymd}: 경기 ${seenByDate.get(ymd) ?? 0}건`)
+    .join(", ");
+  console.log(`예고 선발 신규 수집 없음 (${detail}) — 경기 없음 또는 예고 발표 전. no-op.`);
 }
 
 for (const [month, bucket] of byMonth) {

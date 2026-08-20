@@ -8,7 +8,8 @@
     "data:review": "node scripts/extract-kbo-review.mjs",
     "data:standings": "node scripts/extract-kbo-standings.mjs",
     "data:availability": "node scripts/extract-kbo-availability.mjs",
-    "data:forecast": "node scripts/generate-starter-forecast.mjs"
+    "data:forecast": "node scripts/generate-starter-forecast.mjs",
+    "check:preview": "node scripts/check-preview-health.mjs"
   },
   "devDependencies": {
     "playwright": "^1.56.1"

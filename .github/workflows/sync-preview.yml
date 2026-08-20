@@ -20,6 +20,9 @@ concurrency:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    # 기본 6시간 방치를 막는다. playwright 설치가 매달려 6시간 좀비 런이 되면
+    # data-sync 동시성 그룹을 공유하는 다른 수집까지 큐에서 함께 막힌다(2026-08-18 실측).
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -27,6 +30,7 @@ jobs:
           node-version: "22"
       - run: npm ci
       - run: npx playwright install chromium --with-deps
+        timeout-minutes: 10
       - name: 예고 선발 (오늘+내일)
         run: node scripts/extract-kbo-preview.mjs
       - name: KST 요일 계산
@@ -46,6 +50,19 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add docs/data
           git diff --cached --quiet || (git commit -m "data: sync-preview 예고 선발 갱신" && git pull --rebase && git push)
+      - name: 복구 시 실패 이슈 닫기
+        # 열린 이슈 = "지금 고장 중"을 유지한다. 안 닫으면 한 번 뜬 이슈가 계속 남아
+        # 알림이 신호 역할을 못 한다(2026-08 이슈 #1 사례).
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          TITLE="[sync-preview 실패] 수집 파이프라인 점검 필요"
+          NUM=$(gh issue list --state open --search "in:title \"$TITLE\"" --json number --jq '.[0].number // empty' || true)
+          if [ -n "$NUM" ]; then
+            gh issue close "$NUM" --comment "복구 확인: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          fi
       - name: 실패 알림 이슈
         # 실패를 Actions 탭 밖으로 알린다. 같은 제목의 열린 이슈가 있으면 코멘트만 추가(중복 방지).
         if: failure()

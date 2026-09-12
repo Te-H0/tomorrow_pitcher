@@ -1,18 +1,18 @@
 # 팀별 다음 선발 현황 (자동 파생)
 
-마지막 갱신: 2026-09-11 09:41 KST · generate-starter-forecast.mjs (관측 파생 — 편집하지 마세요)
+마지막 갱신: 2026-09-12 09:48 KST · generate-starter-forecast.mjs (관측 파생 — 편집하지 마세요)
 
 > 슬롯 순서는 관측에서 매 실행 파생되므로 별도 포인터 상태가 없다. 보정은 rotation/overrides.md에서.
 
 | 팀 | 다음 예상 | 마지막 등판 | 휴식일(오늘 기준) | 상태 |
 |---|---|---|---|---|
-| 두산 | 박신지 | 09.04 | 7일 | TEMPORARY |
-| 롯데 | 김진욱 | 09.04 | 7일 | ACTIVE |
-| 삼성 | 보스 | 09.01 | 10일 | ACTIVE |
-| 키움 | 전준표 | 09.05 | 6일 | ACTIVE |
-| 한화 | 황준서 | 09.05 | 6일 | ACTIVE |
-| KIA | 양현종 | 09.05 | 6일 | TEMPORARY |
-| KT | 로건 | 09.05 | 6일 | ACTIVE |
-| LG | 톨허스트 | 09.05 | 6일 | ACTIVE |
-| NC | 이재학 | 09.05 | 6일 | TEMPORARY |
-| SSG | 이준기 | 08.23 | 19일 | TEMPORARY |
+| 두산 | 박신지 | 09.04 | 8일 | TEMPORARY |
+| 롯데 | 나균안 | 09.05 | 7일 | TEMPORARY |
+| 삼성 | 보스 | 09.01 | 11일 | ACTIVE |
+| 키움 | 알칸타라 | 09.06 | 6일 | ACTIVE |
+| 한화 | 화이트 | 09.06 | 6일 | ACTIVE |
+| KIA | 네일 | 09.06 | 6일 | ACTIVE |
+| KT | 대니엘 | 09.06 | 6일 | ACTIVE |
+| LG | 톨허스트 | 09.05 | 7일 | ACTIVE |
+| NC | 구창모 | 09.06 | 6일 | ACTIVE |
+| SSG | 김민준 | 09.05 | 7일 | ACTIVE |

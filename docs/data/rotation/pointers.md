@@ -1,18 +1,18 @@
 # 팀별 다음 선발 현황 (자동 파생)
 
-마지막 갱신: 2026-10-01 10:42 KST · generate-starter-forecast.mjs (관측 파생 — 편집하지 마세요)
+마지막 갱신: 2026-10-02 10:53 KST · generate-starter-forecast.mjs (관측 파생 — 편집하지 마세요)
 
 > 슬롯 순서는 관측에서 매 실행 파생되므로 별도 포인터 상태가 없다. 보정은 rotation/overrides.md에서.
 
 | 팀 | 다음 예상 | 마지막 등판 | 휴식일(오늘 기준) | 상태 |
 |---|---|---|---|---|
-| 두산 | 최민석 | 09.13 | 18일 | TEMPORARY |
-| 롯데 | 김태균 | 09.20 | 11일 | TEMPORARY |
-| 삼성 | 원태인 | 09.20 | 11일 | ACTIVE |
-| 키움 | 안우진 | 09.26 | 5일 | ACTIVE |
-| 한화 | 황준서 | 09.26 | 5일 | ACTIVE |
-| KIA | 양현종 | 09.11 | 20일 | TEMPORARY |
-| KT | 소형준 | 09.13 | 18일 | TEMPORARY |
-| LG | 카라스코 | 09.20 | 11일 | ACTIVE |
-| NC | 송명기 | 09.24 | 7일 | ACTIVE |
-| SSG | 이로운 | 09.17 | 14일 | TEMPORARY |
+| 두산 | 박신지 | 09.20 | 12일 | TEMPORARY |
+| 롯데 | 김태균 | 09.20 | 12일 | TEMPORARY |
+| 삼성 | 페덱 | 09.29 | 3일 | ACTIVE |
+| 키움 | 안우진 | 09.26 | 6일 | ACTIVE |
+| 한화 | 이상규 | 09.27 | 5일 | TEMPORARY |
+| KIA | 시라카와 | 09.20 | 12일 | ACTIVE |
+| KT | 고영표 | 09.26 | 6일 | ACTIVE |
+| LG | 카라스코 | 09.20 | 12일 | ACTIVE |
+| NC | 구창모 | 09.25 | 7일 | ACTIVE |
+| SSG | 아빌라 | 09.29 | 3일 | ACTIVE |

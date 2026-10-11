@@ -1,18 +1,18 @@
 # 팀별 다음 선발 현황 (자동 파생)
 
-마지막 갱신: 2026-10-10 10:59 KST · generate-starter-forecast.mjs (관측 파생 — 편집하지 마세요)
+마지막 갱신: 2026-10-11 10:25 KST · generate-starter-forecast.mjs (관측 파생 — 편집하지 마세요)
 
 > 슬롯 순서는 관측에서 매 실행 파생되므로 별도 포인터 상태가 없다. 보정은 rotation/overrides.md에서.
 
 | 팀 | 다음 예상 | 마지막 등판 | 휴식일(오늘 기준) | 상태 |
 |---|---|---|---|---|
-| 두산 | 최승용 | 10.03 | 7일 | ACTIVE |
-| 롯데 | 나균안 | 10.04 | 6일 | ACTIVE |
-| 삼성 | 페덱 | 09.29 | 11일 | ACTIVE |
-| 키움 | 안우진 | 10.04 | 6일 | ACTIVE |
-| 한화 | 황준서 | 10.01 | 9일 | ACTIVE |
-| KIA | 시라카와 | 10.04 | 6일 | ACTIVE |
-| KT | 고영표 | 10.03 | 7일 | ACTIVE |
-| LG | 김윤식 | 10.04 | 6일 | TEMPORARY |
-| NC | 이재학 | 09.29 | 11일 | TEMPORARY |
-| SSG | 최민준 | 10.04 | 6일 | TEMPORARY |
+| 두산 | 최승용 | 10.03 | 8일 | ACTIVE |
+| 롯데 | 김진욱 | 10.05 | 6일 | TEMPORARY |
+| 삼성 | 페덱 | 09.29 | 12일 | ACTIVE |
+| 키움 | 안우진 | 10.04 | 7일 | ACTIVE |
+| 한화 | 이상규 | 10.03 | 8일 | ACTIVE |
+| KIA | 올러 | 10.05 | 6일 | ACTIVE |
+| KT | 고영표 | 10.03 | 8일 | ACTIVE |
+| LG | 김윤식 | 10.04 | 7일 | TEMPORARY |
+| NC | 이재학 | 09.29 | 12일 | TEMPORARY |
+| SSG | 아빌라 | 10.05 | 6일 | ACTIVE |
